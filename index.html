@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo Game Host & Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display.swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .view {
+            display: none; /* All views hidden by default */
+        }
+        .active-view {
+            display: block; /* Active view will be shown */
+        }
+        /* Style for the Bingo card grid */
+        .bingo-card {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        .bingo-cell {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+            word-break: break-word;
+        }
+        .bingo-cell.marked {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white;
+        }
+        .bingo-cell.free-space {
+            background-color: #16a34a; /* green-600 */
+            color: white;
+        }
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div id="app-container" class="max-w-4xl mx-auto p-4 md:p-6">
+
+        <!-- ===== Initial View: Choose Host or Player ===== -->
+        <div id="initial-view" class="view active-view bg-white p-8 rounded-xl shadow-lg text-center">
+            <h1 class="text-4xl font-bold text-indigo-600 mb-4">Bingo Night!</h1>
+            <p class="text-gray-600 mb-8">Welcome! Are you hosting or playing today?</p>
+            <div class="flex flex-col md:flex-row gap-4 justify-center">
+                <button onclick="switchView('host-login-view')" class="bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300">Host a Game</button>
+                <button onclick="switchView('player-join-view')" class="bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition duration-300">Join a Game</button>
+            </div>
+        </div>
+        
+        <!-- ===== Host: Login View ===== -->
+        <div id="host-login-view" class="view">
+            <h2 class="text-3xl font-bold mb-6 text-center">Host Login / Sign Up</h2>
+            <div class="bg-white p-8 rounded-xl shadow-lg max-w-sm mx-auto">
+                <div class="mb-4">
+                    <label for="host-email" class="block font-semibold mb-1">Email</label>
+                    <input type="email" id="host-email" placeholder="you@example.com" class="w-full p-3 border border-gray-300 rounded-lg">
+                </div>
+                <div class="mb-6">
+                    <label for="host-password" class="block font-semibold mb-1">Password</label>
+                    <input type="password" id="host-password" placeholder="••••••••" class="w-full p-3 border border-gray-300 rounded-lg">
+                </div>
+                <div id="auth-error" class="text-red-500 text-sm mb-4 text-center hidden"></div>
+                <div class="flex flex-col gap-4">
+                    <button id="login-btn" class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition">Log In</button>
+                    <button id="signup-btn" class="w-full bg-green-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-green-600 transition">Sign Up</button>
+                </div>
+                <div class="mt-6 text-center">
+                     <button onclick="switchView('initial-view')" class="text-sm text-indigo-600 hover:underline">Back to Home</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Host: Dashboard (Game Library) ===== -->
+        <div id="host-dashboard-view" class="view">
+             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                    <h2 class="text-3xl font-bold">Your Games</h2>
+                     <p id="host-email-display" class="text-sm text-gray-500 mt-1">...</p>
+                </div>
+                <div>
+                    <button onclick="switchView('create-game-view')" class="bg-green-500 text-white font-semibold py-2 px-5 rounded-lg shadow-md hover:bg-green-600 transition">+ New Game</button>
+                    <button id="logout-btn" class="ml-4 bg-red-500 text-white font-semibold py-2 px-5 rounded-lg shadow-md hover:bg-red-600 transition">Logout</button>
+                </div>
+            </div>
+            <!-- List of saved games will be dynamically inserted here -->
+            <div id="game-list-container" class="bg-white rounded-xl shadow-lg">
+                <p class="text-center text-gray-500 p-6">You haven't created any games yet. Click "+ New Game" to start!</p>
+            </div>
+             <button onclick="switchView('initial-view')" class="mt-6 text-sm text-indigo-600 hover:underline">Back to Home</button>
+        </div>
+
+        <!-- ===== Host: Create New Game Form ===== -->
+        <div id="create-game-view" class="view">
+            <h2 class="text-3xl font-bold mb-6">Create a Custom Bingo Game</h2>
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                    <div>
+                        <label for="game-name" class="block font-semibold mb-1">Game Name</label>
+                        <input type="text" id="game-name" placeholder="e.g., Baby Shower Fun" class="w-full p-3 border border-gray-300 rounded-lg">
+                    </div>
+                     <div>
+                        <label for="winning-pattern-select" class="block font-semibold mb-1">Winning Pattern</label>
+                        <select id="winning-pattern-select" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                            <option value="line">Any Single Line</option>
+                            <option value="corners">Four Corners</option>
+                            <option value="x-pattern">X Pattern</option>
+                            <option value="frame">Outside Frame</option>
+                            <option value="blackout">Blackout / Coverall</option>
+                        </select>
+                    </div>
+                </div>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                     <div>
+                        <label for="list-type-select" class="block font-semibold mb-1">List Format</label>
+                        <select id="list-type-select" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                            <option value="simple" selected>Simple List (Word appears on card)</option>
+                            <option value="paired">Paired List (Call:Display on card)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="grid-size-select" class="block font-semibold mb-1">Grid Size</label>
+                        <select id="grid-size-select" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                            <option value="3">3x3 (Quick Game)</option>
+                            <option value="4">4x4 (Classic Square)</option>
+                            <option value="5" selected>5x5 (Standard Bingo)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex items-center mb-4">
+                   <input type="checkbox" id="free-space-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked>
+                   <label for="free-space-toggle" class="ml-2 block text-sm font-medium text-gray-900">Include "FREE" space</label>
+                </div>
+                <div class="mb-4">
+                    <label for="game-words" class="block font-semibold mb-1">Bingo Items</label>
+                    <textarea id="game-words" rows="8" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Enter one word or phrase per line...&#10;Teamwork&#10;Synergy&#10;Q4 Goals"></textarea>
+                    <p id="word-count-helper" class="text-xs text-gray-500 mt-1">You need at least 24 items for a 5x5 grid.</p>
+                </div>
+                
+                <div id="create-game-error" class="text-red-500 text-sm mb-4 text-center hidden"></div>
+                <div class="mt-6 flex gap-4">
+                    <button id="save-game-btn" class="flex-1 bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-indigo-700 transition">Save Game</button>
+                    <button onclick="switchView('host-dashboard-view')" class="flex-1 bg-gray-200 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Host: Game Lobby ===== -->
+        <div id="host-lobby-view" class="view text-center">
+            <h2 class="text-3xl font-bold mb-4" id="lobby-game-name">Game Lobby</h2>
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <p class="text-gray-600 mb-2">Share this code with your players:</p>
+                <p id="lobby-join-code" class="text-5xl font-extrabold bg-gray-100 p-4 rounded-lg tracking-widest mb-6">...LOADING...</p>
+                <h3 class="text-xl font-semibold mb-4">Players Joined:</h3>
+                <div id="player-list" class="text-left max-h-40 overflow-y-auto border rounded-lg p-2">
+                    <!-- Player names will appear here as they join -->
+                    <p class="text-center text-gray-500">(Players will appear here as they join)</p>
+                </div>
+                <button id="start-game-btn" class="mt-8 w-full bg-green-500 text-white font-bold py-4 text-xl rounded-lg shadow-lg hover:bg-green-600 transition">Start Game!</button>
+            </div>
+             <button onclick="switchView('host-dashboard-view')" class="mt-6 text-sm text-indigo-600 hover:underline">End Lobby & Go Back</button>
+        </div>
+
+        <!-- ===== Host: Live Game View ===== -->
+        <div id="host-game-view" class="view">
+            <div class="flex justify-between items-center mb-4">
+                 <h2 id="host-game-name" class="text-3xl font-bold">Live Game</h2>
+                 <p id="host-game-pattern" class="text-lg font-medium text-indigo-600"></p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Left Column: Caller -->
+                <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-lg text-center">
+                    <p class="text-lg text-gray-500 mb-2">Next Item</p>
+                    <div id="called-item-display" class="text-5xl md:text-7xl font-extrabold text-indigo-600 mb-6 h-32 flex items-center justify-center p-4 break-words">...</div>
+                    <button id="call-next-btn" class="w-full bg-indigo-600 text-white font-bold py-3 text-lg rounded-lg shadow-md hover:bg-indigo-700 transition">Call Next</button>
+                </div>
+                <!-- Right Column: History -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                     <h3 class="font-bold text-xl mb-3 text-center">Call History</h3>
+                     <div id="call-history" class="text-gray-600 text-center h-48 overflow-y-auto">
+                        (Called items will appear here)
+                     </div>
+                </div>
+            </div>
+            <button onclick="switchView('host-dashboard-view')" class="mt-6 text-sm text-indigo-600 hover:underline">End Game & Go to Dashboard</button>
+        </div>
+
+
+        <!-- ===== Player: Join Game View ===== -->
+        <div id="player-join-view" class="view">
+            <h2 class="text-3xl font-bold mb-6 text-center">Join a Game</h2>
+            <div class="bg-white p-8 rounded-xl shadow-lg max-w-sm mx-auto">
+                <div class="mb-4">
+                    <label for="game-code" class="block font-semibold mb-1">Game Code</label>
+                    <input type="text" id="game-code" placeholder="e.g., ABC123" class="w-full p-3 border border-gray-300 rounded-lg uppercase">
+                </div>
+                <div class="mb-6">
+                    <label for="player-name" class="block font-semibold mb-1">Your Nickname</label>
+                    <input type="text" id="player-name" placeholder="Enter a name" class="w-full p-3 border border-gray-300 rounded-lg">
+                </div>
+                 <div id="join-game-error" class="text-red-500 text-sm mb-4 text-center hidden"></div>
+                <button id="join-game-btn" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-indigo-700 transition">Join Game</button>
+                 <button onclick="switchView('initial-view')" class="mt-4 w-full text-sm text-indigo-600 hover:underline">Back</button>
+            </div>
+        </div>
+
+        <!-- ===== Player: Game Card View ===== -->
+        <div id="player-game-view" class="view">
+             <div class="bg-white p-6 rounded-xl shadow-lg">
+                 <div class="flex justify-between items-center mb-4 text-center">
+                    <div>
+                        <p class="text-gray-500">Called Item:</p>
+                        <p id="player-called-item" class="text-3xl md:text-5xl font-bold text-indigo-600">...</p>
+                    </div>
+                    <div>
+                         <p class="text-gray-500">Goal:</p>
+                        <p id="player-game-pattern" class="text-lg font-medium text-indigo-600"></p>
+                    </div>
+                </div>
+                <div id="player-bingo-card" class="bingo-card p-2 bg-gray-100 rounded-lg">
+                    <!-- BINGO card cells will be generated by JS -->
+                </div>
+                <button id="bingo-btn" class="mt-6 w-full bg-green-500 text-white font-bold py-4 text-2xl rounded-lg shadow-lg hover:bg-green-600 transition disabled:bg-gray-400" disabled>BINGO!</button>
+             </div>
+        </div>
+
+    </div> <!-- /app-container -->
+
+    <!-- ===== Host: Bingo Verification Modal ===== -->
+    <div id="verification-modal" class="modal-overlay hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md m-4">
+            <h2 class="text-2xl font-bold text-center mb-2">Bingo Call!</h2>
+            <p id="verification-player-name" class="text-center text-lg font-semibold text-indigo-600 mb-4"></p>
+            <div id="verification-bingo-card" class="bingo-card p-2 bg-gray-100 rounded-lg">
+                <!-- Verification card will be rendered here -->
+            </div>
+            <div class="mt-6 flex gap-4">
+                <button id="deny-win-btn" class="flex-1 bg-gray-200 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-300 transition">Invalid Win</button>
+                <button id="confirm-win-btn" class="flex-1 bg-green-500 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-green-600 transition">Confirm Winner</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Import Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth,
+            onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore,
+            collection,
+            doc,
+            addDoc,
+            deleteDoc,
+            query,
+            onSnapshot,
+            serverTimestamp,
+            getDoc,
+            getDocs,
+            where,
+            updateDoc
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Configuration & App Initialization ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyByts8M0QC3BHa9ZC2UHhn8usdY-yyLXLI",
+            authDomain: "bingo-b63d0.firebaseapp.com",
+            projectId: "bingo-b63d0",
+            storageBucket: "bingo-b63d0.appspot.com",
+            messagingSenderId: "243905967704",
+            appId: "1:243905967704:web:eedca9146b941d9ac8fc2d",
+            measurementId: "G-N4ZSN93M68"
+        };
+        const appId = 'bingo-b63d0';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- Global State ---
+        let currentUser = null;
+        let currentSessionId = null; // for host
+        let currentPlayerState = { // for player
+            sessionId: null,
+            playerId: null,
+            playerName: null,
+            card: [],
+            markedIndices: new Set(),
+            gameDef: null,
+        };
+        let unsubscribeGames = null;
+        let unsubscribePlayers = null; 
+        let unsubscribeSession = null;
+
+        // --- Basic View Switching Logic ---
+        let currentView = 'initial-view';
+
+        function switchView(viewId) {
+            const currentElement = document.getElementById(currentView);
+            if (currentElement) {
+                currentElement.classList.remove('active-view');
+            }
+            const nextElement = document.getElementById(viewId);
+            if (nextElement) {
+                nextElement.classList.add('active-view');
+                currentView = viewId;
+            }
+        }
+        window.switchView = switchView; // Make globally accessible
+
+        const PATTERN_NAMES = {
+            'line': 'Any Single Line',
+            'corners': 'Four Corners',
+            'x-pattern': 'X Pattern',
+            'frame': 'Outside Frame',
+            'blackout': 'Blackout'
+        };
+
+        // --- UI Element References ---
+        const verificationModal = document.getElementById('verification-modal');
+        const verificationPlayerName = document.getElementById('verification-player-name');
+        const verificationBingoCard = document.getElementById('verification-bingo-card');
+        const confirmWinBtn = document.getElementById('confirm-win-btn');
+        const denyWinBtn = document.getElementById('deny-win-btn');
+        const authError = document.getElementById('auth-error');
+        const emailInput = document.getElementById('host-email');
+        const passwordInput = document.getElementById('host-password');
+        const loginBtn = document.getElementById('login-btn');
+        const signupBtn = document.getElementById('signup-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const hostEmailDisplay = document.getElementById('host-email-display');
+        
+        const gameNameInput = document.getElementById('game-name');
+        const gameWordsTextarea = document.getElementById('game-words');
+        const freeSpaceToggle = document.getElementById('free-space-toggle');
+        const saveGameBtn = document.getElementById('save-game-btn');
+        const createGameError = document.getElementById('create-game-error');
+        const gameListContainer = document.getElementById('game-list-container');
+        const lobbyGameName = document.getElementById('lobby-game-name');
+        const lobbyJoinCode = document.getElementById('lobby-join-code');
+        const playerList = document.getElementById('player-list');
+        const gridSizeSelect = document.getElementById('grid-size-select');
+        const wordCountHelper = document.getElementById('word-count-helper');
+        const listTypeSelect = document.getElementById('list-type-select');
+        const winningPatternSelect = document.getElementById('winning-pattern-select');
+
+        const joinGameBtn = document.getElementById('join-game-btn');
+        const gameCodeInput = document.getElementById('game-code');
+        const playerNameInput = document.getElementById('player-name');
+        const joinGameError = document.getElementById('join-game-error');
+        const playerBingoCard = document.getElementById('player-bingo-card');
+        const bingoBtn = document.getElementById('bingo-btn');
+
+        const startGameBtn = document.getElementById('start-game-btn');
+        const callNextBtn = document.getElementById('call-next-btn');
+        const calledItemDisplay = document.getElementById('called-item-display');
+        const callHistory = document.getElementById('call-history');
+        const hostGameName = document.getElementById('host-game-name');
+        const hostGamePattern = document.getElementById('host-game-pattern');
+        const playerCalledItem = document.getElementById('player-called-item');
+        const playerGamePattern = document.getElementById('player-game-pattern');
+
+        // --- Event Listeners & UI Updaters ---
+        function updateWordHelper() {
+            const size = parseInt(gridSizeSelect.value);
+            const hasFreeSpace = freeSpaceToggle.checked;
+            const requiredWords = hasFreeSpace ? (size * size) - 1 : (size * size);
+            const listType = listTypeSelect.value;
+
+            if(listType === 'simple') {
+                gameWordsTextarea.placeholder = "Enter one word or phrase per line...\nTeamwork\nSynergy\nQ4 Goals";
+                wordCountHelper.textContent = `You need at least ${requiredWords} items for a ${size}x${size} grid.`;
+            } else { // paired
+                gameWordsTextarea.placeholder = "Format: Item To Call:Item on Card; ...\nExample: What is 2+2?:4; Capital of France:Paris;";
+                wordCountHelper.textContent = `You need at least ${requiredWords} pairs (separated by semicolons) for a ${size}x${size} grid.`;
+            }
+        }
+        gridSizeSelect.addEventListener('change', updateWordHelper);
+        freeSpaceToggle.addEventListener('change', updateWordHelper);
+        listTypeSelect.addEventListener('change', updateWordHelper);
+        document.addEventListener('DOMContentLoaded', updateWordHelper);
+
+
+        // --- Auth Logic ---
+        signupBtn.addEventListener('click', async () => {
+            try {
+                authError.classList.add('hidden');
+                await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+            } catch (error) {
+                authError.textContent = error.message;
+                authError.classList.remove('hidden');
+            }
+        });
+        loginBtn.addEventListener('click', async () => {
+            try {
+                authError.classList.add('hidden');
+                await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+            } catch (error) {
+                authError.textContent = error.message;
+                authError.classList.remove('hidden');
+            }
+        });
+        logoutBtn.addEventListener('click', async () => await signOut(auth));
+        
+        // --- Host: Game Creation & Management ---
+        saveGameBtn.addEventListener('click', async () => {
+            if (!currentUser) return;
+            createGameError.classList.add('hidden');
+            const gameName = gameNameInput.value.trim();
+            const listType = listTypeSelect.value;
+            const rawWords = gameWordsTextarea.value.trim();
+            const hasFreeSpace = freeSpaceToggle.checked;
+            const gridSize = parseInt(gridSizeSelect.value);
+            const winningPattern = winningPatternSelect.value;
+            const requiredWords = hasFreeSpace ? (gridSize * gridSize) - 1 : (gridSize * gridSize);
+            let words = [];
+            
+            if (!gameName) {
+                createGameError.textContent = 'Please enter a name for your game.';
+                createGameError.classList.remove('hidden'); return;
+            }
+
+            try {
+                if (listType === 'simple') {
+                    words = rawWords.split('\n').map(w => w.trim()).filter(Boolean);
+                } else {
+                    words = rawWords.split(';').map(pair => {
+                        if (!pair.trim()) return null;
+                        const parts = pair.split(':');
+                        if (parts.length !== 2) throw new Error(`Invalid pair: "${pair}"`);
+                        const [call, display] = parts.map(p => p.trim());
+                        if (!call || !display) throw new Error(`Empty call/display: "${pair}"`);
+                        return { call, display };
+                    }).filter(Boolean);
+                }
+            } catch (error) {
+                createGameError.textContent = `Parsing Error: ${error.message}.`;
+                createGameError.classList.remove('hidden'); return;
+            }
+            
+            if (words.length < requiredWords) {
+                const itemType = listType === 'simple' ? 'items' : 'pairs';
+                createGameError.textContent = `Need at least ${requiredWords} ${itemType} (you have ${words.length}).`;
+                createGameError.classList.remove('hidden'); return;
+            }
+
+            try {
+                const gamesCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/games`;
+                await addDoc(collection(db, gamesCollectionPath), {
+                    name: gameName, listType, words, hasFreeSpace, gridSize, winningPattern,
+                    createdAt: serverTimestamp()
+                });
+                gameNameInput.value = '';
+                gameWordsTextarea.value = '';
+                switchView('host-dashboard-view');
+            } catch (e) {
+                console.error("Error saving game: ", e);
+                createGameError.textContent = "Could not save game.";
+                createGameError.classList.remove('hidden');
+            }
+        });
+
+        gameListContainer.addEventListener('click', (e) => {
+            if (!currentUser) return;
+            const target = e.target.closest('button');
+            if (!target) return;
+            const gameId = target.dataset.gameId;
+            if (target.classList.contains('host-btn')) startHostingGame(gameId);
+            if (target.classList.contains('delete-btn')) deleteGame(gameId);
+        });
+        
+        async function deleteGame(gameId) {
+            if (!currentUser || !confirm("Permanently delete this game?")) return;
+            try {
+                const gameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${gameId}`;
+                await deleteDoc(doc(db, gameDocPath));
+            } catch (error) {
+                console.error("Error deleting game: ", error);
+            }
+        }
+
+        async function startHostingGame(gameId) {
+            if (!currentUser) return;
+            try {
+                const gameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${gameId}`;
+                const gameDocSnap = await getDoc(doc(db, gameDocPath));
+                if (!gameDocSnap.exists()) return console.error("Game not found!");
+                const gameData = gameDocSnap.data();
+
+                const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                
+                const sessionsCollectionPath = `artifacts/${appId}/public/data/sessions`;
+                const sessionRef = await addDoc(collection(db, sessionsCollectionPath), {
+                    gameId, hostId: currentUser.uid, gameDefinition: gameData, joinCode,
+                    status: 'lobby', createdAt: serverTimestamp(), calledItems: [], bingoCall: null
+                });
+                
+                currentSessionId = sessionRef.id;
+                lobbyGameName.textContent = gameData.name;
+                lobbyJoinCode.textContent = joinCode;
+                listenForPlayers(currentSessionId);
+                listenForHostSessionUpdates(); // FIX is here
+                switchView('host-lobby-view');
+            } catch(error) {
+                console.error("Error starting session: ", error);
+            }
+        }
+
+        startGameBtn.addEventListener('click', async () => {
+            if (!currentSessionId) return;
+            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
+            await updateDoc(doc(db, sessionDocPath), { status: 'active' });
+        });
+
+        callNextBtn.addEventListener('click', async () => {
+            if (!currentSessionId) return;
+            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
+            const sessionDoc = await getDoc(doc(db, sessionDocPath));
+            if (!sessionDoc.exists()) return;
+
+            const { gameDefinition, calledItems } = sessionDoc.data();
+            const allItems = gameDefinition.words;
+            const availableItems = allItems.filter(item => {
+                const callValue = typeof item === 'object' ? item.call : item;
+                return !calledItems.some(called => (called.call || called) === callValue);
+            });
+
+            if (availableItems.length === 0) {
+                calledItemDisplay.textContent = "GAME OVER";
+                callNextBtn.disabled = true;
+                return;
+            }
+
+            const nextItem = availableItems[Math.floor(Math.random() * availableItems.length)];
+            await updateDoc(doc(db, sessionDocPath), {
+                calledItems: [...calledItems, nextItem]
+            });
+        });
+
+        confirmWinBtn.addEventListener('click', async () => {
+            if (!currentSessionId) return;
+            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
+            await updateDoc(doc(db, sessionDocPath), { status: 'finished' });
+            verificationModal.classList.add('hidden');
+        });
+
+        denyWinBtn.addEventListener('click', async () => {
+            if (!currentSessionId) return;
+            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
+            await updateDoc(doc(db, sessionDocPath), { bingoCall: null });
+            verificationModal.classList.add('hidden');
+        });
+
+
+        function listenForHostSessionUpdates() {
+            if (unsubscribeSession) unsubscribeSession();
+            if (!currentSessionId) return;
+            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
+            unsubscribeSession = onSnapshot(doc(db, sessionDocPath), (docSnap) => {
+                if (!docSnap.exists()) return;
+                const data = docSnap.data();
+
+                if (data.status === 'active' && currentView !== 'host-game-view') {
+                    hostGameName.textContent = data.gameDefinition.name;
+                    hostGamePattern.textContent = `Goal: ${PATTERN_NAMES[data.gameDefinition.winningPattern]}`;
+                    switchView('host-game-view');
+                }
+                
+                if (data.status === 'finished') {
+                    calledItemDisplay.innerHTML = `Winner: <span class="text-green-500">${data.bingoCall.playerName}</span>`;
+                    callNextBtn.disabled = true;
+                }
+
+                const latestItem = data.calledItems[data.calledItems.length - 1];
+                if(latestItem && data.status !== 'finished') {
+                    calledItemDisplay.textContent = latestItem.call || latestItem;
+                }
+                callHistory.innerHTML = data.calledItems.map(item => `<div>${item.call || item}</div>`).reverse().join('');
+
+                // Check for bingo call
+                if (data.bingoCall) {
+                    renderVerificationCard(data.bingoCall);
+                    verificationModal.classList.remove('hidden');
+                } else {
+                    verificationModal.classList.add('hidden');
+                }
+            });
+        }
+
+        function renderVerificationCard(bingoCall) {
+            const { playerName, card, markedIndices, gameDef } = bingoCall;
+            const size = gameDef.gridSize;
+            verificationPlayerName.textContent = playerName;
+            verificationBingoCard.innerHTML = '';
+            verificationBingoCard.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+            card.forEach((word, index) => {
+                const cell = document.createElement('div');
+                cell.classList.add('bingo-cell', 'bg-white', 'shadow-sm', 'text-xs');
+                const displayWord = word.display || word;
+
+                if (displayWord === "FREE") {
+                    cell.textContent = "FREE";
+                    cell.classList.add('free-space');
+                } else {
+                    cell.textContent = displayWord;
+                }
+                if (markedIndices.includes(index)) {
+                     cell.classList.add('marked');
+                }
+                verificationBingoCard.appendChild(cell);
+            });
+        }
+
+
+        function listenForGames() {
+            if (unsubscribeGames) unsubscribeGames(); 
+            if (!currentUser) return;
+            const gamesCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/games`;
+            const q = query(collection(db, gamesCollectionPath));
+            unsubscribeGames = onSnapshot(q, (snap) => {
+                const games = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderGames(games);
+            }, (error) => console.error("Error listening for games:", error));
+        }
+
+        function listenForPlayers(sessionId) {
+            if (unsubscribePlayers) unsubscribePlayers();
+            const playersCollectionPath = `artifacts/${appId}/public/data/sessions/${sessionId}/players`;
+            unsubscribePlayers = onSnapshot(query(collection(db, playersCollectionPath)), (snap) => {
+                const players = snap.docs.map(doc => doc.data().name);
+                renderPlayers(players);
+            });
+        }
+        
+        function renderPlayers(players) {
+            playerList.innerHTML = players.length > 0
+                ? players.map(name => `<div class="p-2 border-b">${name}</div>`).join('')
+                : `<p class="text-center text-gray-500">(Players will appear here as they join)</p>`;
+        }
+
+        function renderGames(games) {
+            gameListContainer.innerHTML = games.length > 0
+                ? games.map(game => `
+                    <div class="flex items-center justify-between p-4 border-b last:border-b-0">
+                        <div>
+                            <h3 class="font-bold text-lg">${game.name}</h3>
+                            <p class="text-sm text-gray-500">${game.gridSize || 5}x${game.gridSize || 5} • ${PATTERN_NAMES[game.winningPattern] || 'Single Line'}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button data-game-id="${game.id}" class="host-btn bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg text-sm hover:bg-blue-600 transition">Host</button>
+                            <button data-game-id="${game.id}" class="delete-btn bg-red-500 text-white font-semibold py-2 px-4 rounded-lg text-sm hover:bg-red-600 transition">Delete</button>
+                        </div>
+                    </div>`).join('')
+                : `<p class="text-center text-gray-500 p-6">You haven't created any games yet.</p>`;
+        }
+
+        // --- Player: Game Join & Play Logic ---
+        joinGameBtn.addEventListener('click', async () => {
+            joinGameError.classList.add('hidden');
+            const code = gameCodeInput.value.trim().toUpperCase();
+            const name = playerNameInput.value.trim();
+
+            if (!code || !name) {
+                joinGameError.textContent = 'Please enter a game code and a nickname.';
+                joinGameError.classList.remove('hidden'); return;
+            }
+
+            try {
+                const sessionsPath = `artifacts/${appId}/public/data/sessions`;
+                const q = query(collection(db, sessionsPath), where("joinCode", "==", code));
+                const snap = await getDocs(q);
+
+                if (snap.empty) {
+                    joinGameError.textContent = 'Game not found.';
+                    joinGameError.classList.remove('hidden'); return;
+                }
+                
+                const sessionDoc = snap.docs[0];
+                if (sessionDoc.data().status !== 'lobby') {
+                    joinGameError.textContent = 'Game has already started.';
+                    joinGameError.classList.remove('hidden'); return;
+                }
+
+                const gameDef = sessionDoc.data().gameDefinition;
+                const card = generatePlayerCard(gameDef);
+                
+                const playersPath = `artifacts/${appId}/public/data/sessions/${sessionDoc.id}/players`;
+                const playerRef = await addDoc(collection(db, playersPath), {
+                    name, card, joinedAt: serverTimestamp()
+                });
+
+                currentPlayerState = {
+                    sessionId: sessionDoc.id,
+                    playerId: playerRef.id,
+                    playerName: name,
+                    card,
+                    markedIndices: new Set(),
+                    gameDef,
+                };
+                 if (gameDef.hasFreeSpace) {
+                    const middleIndex = Math.floor((gameDef.gridSize * gameDef.gridSize) / 2);
+                    currentPlayerState.markedIndices.add(middleIndex);
+                }
+                
+                renderBingoCard(card, gameDef.gridSize);
+                listenForPlayerSessionUpdates();
+                switchView('player-game-view');
+
+            } catch (error) {
+                console.error("Error joining game: ", error);
+                joinGameError.textContent = "Could not join game.";
+                joinGameError.classList.remove('hidden');
+            }
+        });
+        
+        bingoBtn.addEventListener('click', async () => {
+            const { sessionId, playerName, card, markedIndices, gameDef } = currentPlayerState;
+            if (!sessionId) return;
+            
+            bingoBtn.disabled = true; // Prevent spamming
+            bingoBtn.textContent = "BINGO CALLED!";
+
+            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${sessionId}`;
+            await updateDoc(doc(db, sessionDocPath), {
+                bingoCall: {
+                    playerName,
+                    card,
+                    markedIndices: Array.from(markedIndices), // Convert Set to Array for Firestore
+                    gameDef
+                }
+            });
+        });
+
+        function generatePlayerCard(gameDef) {
+            const { words, gridSize, hasFreeSpace } = gameDef;
+            const cardSize = gridSize * gridSize;
+            const items = [...words]; // Create a mutable copy
+            for (let i = items.length - 1; i > 0; i--) { // Shuffle
+                const j = Math.floor(Math.random() * (i + 1));
+                [items[i], items[j]] = [items[j], items[i]];
+            }
+            let cardWords = items.slice(0, hasFreeSpace ? cardSize - 1 : cardSize);
+            if (hasFreeSpace) {
+                const middleIndex = Math.floor(cardSize / 2);
+                cardWords.splice(middleIndex, 0, "FREE");
+            }
+            return cardWords;
+        }
+        
+        function renderBingoCard(cardWords, size) {
+            playerBingoCard.innerHTML = '';
+            playerBingoCard.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            
+            cardWords.forEach((word, index) => {
+                const cell = document.createElement('div');
+                cell.classList.add('bingo-cell', 'bg-white', 'shadow-sm', 'text-xs', 'md:text-sm');
+                cell.dataset.index = index;
+                const displayWord = word.display || word;
+
+                if (displayWord === "FREE") {
+                    cell.textContent = "FREE";
+                    cell.classList.add('free-space');
+                } else {
+                    cell.textContent = displayWord;
+                }
+                if (currentPlayerState.markedIndices.has(index)) {
+                     cell.classList.add('marked');
+                }
+                playerBingoCard.appendChild(cell);
+            });
+        }
+        
+        playerBingoCard.addEventListener('click', (e) => {
+            const cell = e.target.closest('.bingo-cell');
+            if (!cell || (cell.textContent === 'FREE')) return;
+            // Only allow marking/unmarking if the game is active
+            if (currentView !== 'player-game-view') return;
+            
+            const index = parseInt(cell.dataset.index);
+            if (currentPlayerState.markedIndices.has(index)) {
+                // Optional: decide if players can un-mark squares. For now, we allow it.
+                // currentPlayerState.markedIndices.delete(index);
+                // cell.classList.remove('marked');
+            } else {
+                // This manual marking is less important now with auto-marking, but can be kept
+                // currentPlayerState.markedIndices.add(index);
+                // cell.classList.add('marked');
+            }
+            // Win condition is checked automatically on data updates, so manual check is less critical
+            // checkWinCondition();
+        });
+
+        function listenForPlayerSessionUpdates() {
+            if (unsubscribeSession) unsubscribeSession();
+            const { sessionId } = currentPlayerState;
+            if (!sessionId) return;
+            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${sessionId}`;
+
+            unsubscribeSession = onSnapshot(doc(db, sessionDocPath), (docSnap) => {
+                if (!docSnap.exists()) { // Game ended by host deleting session
+                    alert("The game has ended.");
+                    switchView('initial-view');
+                    return;
+                }; 
+                const { status, calledItems, gameDefinition, bingoCall } = docSnap.data();
+
+                if (status === 'active' && currentView !== 'player-game-view') {
+                    playerGamePattern.textContent = `Goal: ${PATTERN_NAMES[gameDefinition.winningPattern]}`;
+                    switchView('player-game-view');
+                }
+                 if (status === 'finished') {
+                    bingoBtn.disabled = true;
+                    if(bingoCall.playerName === currentPlayerState.playerName) {
+                        bingoBtn.textContent = "YOU WON!";
+                        bingoBtn.classList.replace('bg-green-500', 'bg-yellow-500');
+                    } else {
+                        bingoBtn.textContent = `WINNER: ${bingoCall.playerName}`;
+                    }
+                    return; // Stop further processing
+                }
+
+
+                const latestItem = calledItems[calledItems.length - 1];
+                if(latestItem) {
+                    playerCalledItem.textContent = latestItem.call || latestItem;
+                }
+
+                // Auto-mark card
+                const calledValues = new Set(calledItems.map(item => item.call || item));
+                let changed = false;
+                currentPlayerState.card.forEach((item, index) => {
+                    const itemValue = item.call || item;
+                    if (calledValues.has(itemValue) && !currentPlayerState.markedIndices.has(index)) {
+                        currentPlayerState.markedIndices.add(index);
+                        const cell = playerBingoCard.querySelector(`[data-index='${index}']`);
+                        if(cell) cell.classList.add('marked');
+                        changed = true;
+                    }
+                });
+
+                if(changed) checkWinCondition();
+            });
+        }
+        
+        function checkWinCondition() {
+            const { gameDef, markedIndices } = currentPlayerState;
+            const { winningPattern, gridSize } = gameDef;
+            const size = gridSize;
+            let hasWon = false;
+            
+            const isMarked = (idx) => markedIndices.has(idx);
+
+            if (winningPattern === 'line') {
+                const diags = [[], []];
+                for (let i = 0; i < size; i++) {
+                    const row = [], col = [];
+                    for(let j = 0; j < size; j++) {
+                        row.push(i * size + j);
+                        col.push(j * size + i);
+                    }
+                    if(row.every(isMarked) || col.every(isMarked)) hasWon = true;
+                    diags[0].push(i * size + i);
+                    diags[1].push(i * size + (size - 1 - i));
+                }
+                if(diags[0].every(isMarked) || diags[1].every(isMarked)) hasWon = true;
+            } else if (winningPattern === 'corners') {
+                const corners = [0, size - 1, size * (size - 1), size * size - 1];
+                if (corners.every(isMarked)) hasWon = true;
+            } else if (winningPattern === 'x-pattern') {
+                const diag1 = [], diag2 = [];
+                 for (let i = 0; i < size; i++) {
+                    diag1.push(i * size + i);
+                    diag2.push(i * size + (size - 1 - i));
+                }
+                if(diag1.every(isMarked) && diag2.every(isMarked)) hasWon = true;
+            } else if (winningPattern === 'frame') {
+                const frame = [];
+                for(let i=0; i < size*size; i++) {
+                    const row = Math.floor(i / size);
+                    const col = i % size;
+                    if(row === 0 || row === size-1 || col === 0 || col === size-1) {
+                        frame.push(i);
+                    }
+                }
+                if(frame.every(isMarked)) hasWon = true;
+            } else if (winningPattern === 'blackout') {
+                if(markedIndices.size === size * size) hasWon = true;
+            }
+
+            bingoBtn.disabled = !hasWon;
+        }
+
+        // --- Global Auth State Management ---
+        onAuthStateChanged(auth, (user) => {
+            const protectedViews = ['host-dashboard-view', 'create-game-view', 'host-lobby-view', 'host-game-view'];
+            if (user) {
+                currentUser = user;
+                hostEmailDisplay.textContent = `Logged in as: ${user.email}`;
+                if (currentView === 'host-login-view' || currentView === 'initial-view') {
+                    switchView('host-dashboard-view');
+                }
+                listenForGames(); 
+            } else {
+                currentUser = null;
+                if (unsubscribeGames) unsubscribeGames();
+                if (unsubscribePlayers) unsubscribePlayers();
+                if (unsubscribeSession) unsubscribeSession();
+                gameListContainer.innerHTML = `<p class="text-center text-gray-500 p-6">You haven't created any games yet.</p>`;
+                if (protectedViews.includes(currentView)) {
+                    switchView('initial-view');
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
+
