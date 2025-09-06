@@ -6,10 +6,25 @@
     <title>Bingo Game Host & Player</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
+        body, html[lang="en"] {
+            font-family: 'Nunito', sans-serif;
+        }
+        html[lang="zh-Hant"] body {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        h1, h2, h3, .font-heading {
+             font-family: 'Merriweather', serif;
+        }
+         html[lang="zh-Hant"] h1,
+         html[lang="zh-Hant"] h2,
+         html[lang="zh-Hant"] h3,
+         html[lang="zh-Hant"] .font-heading {
+             font-family: 'Noto Sans TC', sans-serif;
+             font-weight: 700;
         }
         .view {
             display: none; /* All views hidden by default */
@@ -37,11 +52,11 @@
             word-break: break-word;
         }
         .bingo-cell.marked {
-            background-color: #4f46e5; /* indigo-600 */
+            background-color: #ea580c; /* orange-600 */
             color: white;
         }
         .bingo-cell.free-space {
-            background-color: #16a34a; /* green-600 */
+            background-color: #059669; /* emerald-600 */
             color: white;
         }
         /* Modal styles */
@@ -59,39 +74,45 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-orange-50 text-stone-800">
+    <header class="max-w-4xl mx-auto px-4 md:px-6 pt-4 relative">
+        <!-- Language Switcher -->
+        <div class="absolute top-4 right-4 md:right-6 z-10">
+            <button id="lang-en-btn" class="px-3 py-1 text-sm font-semibold rounded-l-md bg-white shadow-sm text-orange-700">EN</button>
+            <button id="lang-zh-btn" class="px-3 py-1 text-sm font-semibold rounded-r-md bg-white shadow-sm text-stone-600">中</button>
+        </div>
+    </header>
 
     <div id="app-container" class="max-w-4xl mx-auto p-4 md:p-6">
-
         <!-- ===== Initial View: Choose Host or Player ===== -->
         <div id="initial-view" class="view active-view bg-white p-8 rounded-xl shadow-lg text-center">
-            <h1 class="text-4xl font-bold text-indigo-600 mb-4">Bingo Night!</h1>
-            <p class="text-gray-600 mb-8">Welcome! Are you hosting or playing today?</p>
+            <h1 class="text-4xl font-black text-orange-800 mb-4" data-lang="appTitle">Bingo Night!</h1>
+            <p class="text-stone-600 mb-8" data-lang="welcomeMessage">Welcome! Are you hosting or playing today?</p>
             <div class="flex flex-col md:flex-row gap-4 justify-center">
-                <button onclick="switchView('host-login-view')" class="bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300">Host a Game</button>
-                <button onclick="switchView('player-join-view')" class="bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition duration-300">Join a Game</button>
+                <button onclick="switchView('host-login-view')" class="bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-orange-700 transition duration-300" data-lang="hostAGame">Host a Game</button>
+                <button onclick="switchView('player-join-view')" class="bg-amber-200 text-stone-800 font-semibold py-3 px-6 rounded-lg hover:bg-amber-300 transition duration-300" data-lang="joinAGame">Join a Game</button>
             </div>
         </div>
         
         <!-- ===== Host: Login View ===== -->
         <div id="host-login-view" class="view">
-            <h2 class="text-3xl font-bold mb-6 text-center">Host Login / Sign Up</h2>
+            <h2 class="text-3xl font-bold mb-6 text-center text-orange-800" data-lang="hostLoginTitle">Host Login / Sign Up</h2>
             <div class="bg-white p-8 rounded-xl shadow-lg max-w-sm mx-auto">
                 <div class="mb-4">
-                    <label for="host-email" class="block font-semibold mb-1">Email</label>
-                    <input type="email" id="host-email" placeholder="you@example.com" class="w-full p-3 border border-gray-300 rounded-lg">
+                    <label for="host-email" class="block font-semibold mb-1" data-lang="emailLabel">Email</label>
+                    <input type="email" id="host-email" data-lang-placeholder="emailPlaceholder" placeholder="you@example.com" class="w-full p-3 border border-stone-300 rounded-lg">
                 </div>
                 <div class="mb-6">
-                    <label for="host-password" class="block font-semibold mb-1">Password</label>
-                    <input type="password" id="host-password" placeholder="••••••••" class="w-full p-3 border border-gray-300 rounded-lg">
+                    <label for="host-password" class="block font-semibold mb-1" data-lang="passwordLabel">Password</label>
+                    <input type="password" id="host-password" data-lang-placeholder="passwordPlaceholder" placeholder="••••••••" class="w-full p-3 border border-stone-300 rounded-lg">
                 </div>
-                <div id="auth-error" class="text-red-500 text-sm mb-4 text-center hidden"></div>
+                <div id="auth-error" class="text-red-600 text-sm mb-4 text-center hidden"></div>
                 <div class="flex flex-col gap-4">
-                    <button id="login-btn" class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition">Log In</button>
-                    <button id="signup-btn" class="w-full bg-green-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-green-600 transition">Sign Up</button>
+                    <button id="login-btn" class="w-full bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-orange-700 transition" data-lang="login">Log In</button>
+                    <button id="signup-btn" class="w-full bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-emerald-700 transition" data-lang="signUp">Sign Up</button>
                 </div>
                 <div class="mt-6 text-center">
-                     <button onclick="switchView('initial-view')" class="text-sm text-indigo-600 hover:underline">Back to Home</button>
+                     <button onclick="switchView('initial-view')" class="text-sm text-orange-700 hover:underline" data-lang="backToHome">Back to Home</button>
                 </div>
             </div>
         </div>
@@ -100,184 +121,173 @@
         <div id="host-dashboard-view" class="view">
              <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <h2 class="text-3xl font-bold">Your Games</h2>
-                     <p id="host-email-display" class="text-sm text-gray-500 mt-1">...</p>
+                    <h2 class="text-3xl font-bold text-orange-800" data-lang="yourGames">Your Games</h2>
+                     <p id="host-email-display" class="text-sm text-stone-500 mt-1">...</p>
                 </div>
                 <div>
-                    <button onclick="switchView('create-game-view')" class="bg-green-500 text-white font-semibold py-2 px-5 rounded-lg shadow-md hover:bg-green-600 transition">+ New Game</button>
-                    <button id="logout-btn" class="ml-4 bg-red-500 text-white font-semibold py-2 px-5 rounded-lg shadow-md hover:bg-red-600 transition">Logout</button>
+                    <button onclick="switchView('create-game-view')" class="bg-emerald-600 text-white font-semibold py-2 px-5 rounded-lg shadow-md hover:bg-emerald-700 transition" data-lang="newGame">+ New Game</button>
+                    <button id="logout-btn" class="ml-4 bg-red-600 text-white font-semibold py-2 px-5 rounded-lg shadow-md hover:bg-red-700 transition" data-lang="logout">Logout</button>
                 </div>
             </div>
-            <!-- List of saved games will be dynamically inserted here -->
             <div id="game-list-container" class="bg-white rounded-xl shadow-lg">
-                <p class="text-center text-gray-500 p-6">You haven't created any games yet. Click "+ New Game" to start!</p>
+                <!-- Game list or empty message appears here -->
             </div>
-             <button onclick="switchView('initial-view')" class="mt-6 text-sm text-indigo-600 hover:underline">Back to Home</button>
+             <button onclick="switchView('initial-view')" class="mt-6 text-sm text-orange-700 hover:underline" data-lang="backToHome">Back to Home</button>
         </div>
 
         <!-- ===== Host: Create New Game Form ===== -->
         <div id="create-game-view" class="view">
-            <h2 id="create-edit-title" class="text-3xl font-bold mb-6">Create a Custom Bingo Game</h2>
+            <h2 id="create-edit-title" class="text-3xl font-bold mb-6 text-orange-800" data-lang="createGameTitle">Create a Custom Bingo Game</h2>
             <div class="bg-white p-8 rounded-xl shadow-lg">
                 <input type="hidden" id="editing-game-id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                     <div>
-                        <label for="game-name" class="block font-semibold mb-1">Game Name</label>
-                        <input type="text" id="game-name" placeholder="e.g., Baby Shower Fun" class="w-full p-3 border border-gray-300 rounded-lg">
+                        <label for="game-name" class="block font-semibold mb-1" data-lang="gameNameLabel">Game Name</label>
+                        <input type="text" id="game-name" data-lang-placeholder="gameNamePlaceholder" placeholder="e.g., Baby Shower Fun" class="w-full p-3 border border-stone-300 rounded-lg">
                     </div>
                      <div>
-                        <label for="winning-pattern-select" class="block font-semibold mb-1">Winning Pattern</label>
-                        <select id="winning-pattern-select" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
-                            <option value="line">Any Single Line</option>
-                            <option value="corners">Four Corners</option>
-                            <option value="x-pattern">X Pattern</option>
-                            <option value="frame">Outside Frame</option>
-                            <option value="blackout">Blackout / Coverall</option>
+                        <label for="winning-pattern-select" class="block font-semibold mb-1" data-lang="winningPatternLabel">Winning Pattern</label>
+                        <select id="winning-pattern-select" class="w-full p-3 border border-stone-300 rounded-lg bg-white">
+                            <!-- Options will be populated by JS -->
                         </select>
                     </div>
                 </div>
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                      <div>
-                        <label for="list-type-select" class="block font-semibold mb-1">List Format</label>
-                        <select id="list-type-select" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
-                            <option value="simple" selected>Simple List (Word appears on card)</option>
-                            <option value="paired">Paired List (Call:Display on card)</option>
+                        <label for="list-type-select" class="block font-semibold mb-1" data-lang="listFormatLabel">List Format</label>
+                        <select id="list-type-select" class="w-full p-3 border border-stone-300 rounded-lg bg-white">
+                            <option value="simple" selected data-lang="simpleList">Simple List (Word appears on card)</option>
+                            <option value="paired" data-lang="pairedList">Paired List (Call:Display on card)</option>
                         </select>
                     </div>
                     <div>
-                        <label for="grid-size-select" class="block font-semibold mb-1">Grid Size</label>
-                        <select id="grid-size-select" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
-                            <option value="3">3x3 (Quick Game)</option>
-                            <option value="4">4x4 (Classic Square)</option>
-                            <option value="5" selected>5x5 (Standard Bingo)</option>
+                        <label for="grid-size-select" class="block font-semibold mb-1" data-lang="gridSizeLabel">Grid Size</label>
+                        <select id="grid-size-select" class="w-full p-3 border border-stone-300 rounded-lg bg-white">
+                           <!-- Options will be populated by JS -->
                         </select>
                     </div>
                 </div>
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                     <div>
-                        <label for="marking-type-select" class="block font-semibold mb-1">Card Marking Style</label>
-                        <select id="marking-type-select" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
-                            <option value="auto" selected>Automatic Marking</option>
-                            <option value="manual">Manual Marking (Player taps)</option>
+                        <label for="marking-type-select" class="block font-semibold mb-1" data-lang="markingStyleLabel">Card Marking Style</label>
+                        <select id="marking-type-select" class="w-full p-3 border border-stone-300 rounded-lg bg-white">
+                            <!-- Options will be populated by JS -->
                         </select>
                     </div>
-                    <div class="flex items-center pt-6"> <!-- Using padding to align with the label above -->
-                        <input type="checkbox" id="free-space-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked>
-                        <label for="free-space-toggle" class="ml-2 block text-sm font-medium text-gray-900">Include "FREE" space</label>
-                    </div>
+                     <div class="flex items-end">
+                        <div class="flex items-center mb-2">
+                           <input type="checkbox" id="free-space-toggle" class="h-4 w-4 text-orange-600 border-stone-300 rounded focus:ring-orange-500">
+                           <label for="free-space-toggle" class="ml-2 block text-sm font-medium text-stone-900" data-lang="includeFreeSpace">Include "FREE" space</label>
+                        </div>
+                     </div>
                 </div>
+                <p id="manual-mark-helper" class="text-sm text-stone-600 bg-amber-100 p-3 rounded-lg hidden mb-4" data-lang="manualMarkHelper">In Manual mode, players must tap the correct square on their card to mark it.</p>
                 <div class="mb-4">
-                    <label for="game-words" class="block font-semibold mb-1">Bingo Items</label>
-                    <textarea id="game-words" rows="8" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Enter one word or phrase per line...&#10;Teamwork&#10;Synergy&#10;Q4 Goals"></textarea>
-                    <p id="word-count-helper" class="text-xs text-gray-500 mt-1">You need at least 24 items for a 5x5 grid.</p>
+                    <label for="game-words" class="block font-semibold mb-1" data-lang="bingoItemsLabel">Bingo Items</label>
+                    <textarea id="game-words" rows="8" class="w-full p-3 border border-stone-300 rounded-lg"></textarea>
+                    <p id="word-count-helper" class="text-xs text-stone-500 mt-1"></p>
                 </div>
                 
-                <div id="create-game-error" class="text-red-500 text-sm mb-4 text-center hidden"></div>
+                <div id="create-game-error" class="text-red-600 text-sm mb-4 text-center hidden"></div>
                 <div class="mt-6 flex gap-4">
-                    <button id="save-game-btn" class="flex-1 bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-indigo-700 transition">Save Game</button>
-                    <button id="cancel-edit-btn" onclick="switchView('host-dashboard-view')" class="flex-1 bg-gray-200 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+                    <button id="save-game-btn" class="flex-1 bg-orange-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-orange-700 transition" data-lang="saveGame">Save Game</button>
+                    <button id="cancel-edit-btn" onclick="switchView('host-dashboard-view')" class="flex-1 bg-amber-200 text-stone-800 font-semibold py-3 rounded-lg hover:bg-amber-300 transition" data-lang="cancel">Cancel</button>
                 </div>
             </div>
         </div>
-
+        
         <!-- ===== Host: Pre-Game Settings Review ===== -->
         <div id="host-settings-view" class="view">
-            <h2 class="text-3xl font-bold mb-6">Review Game Settings</h2>
+            <h2 class="text-3xl font-bold mb-6 text-orange-800" data-lang="reviewSettingsTitle">Review Game Settings</h2>
             <div class="bg-white p-8 rounded-xl shadow-lg">
                 <input type="hidden" id="settings-game-id">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                    <div>
-                        <label for="settings-game-name" class="block font-semibold mb-1">Game Name</label>
-                        <input type="text" id="settings-game-name" class="w-full p-3 border border-gray-300 rounded-lg">
-                    </div>
-                     <div>
-                        <label for="settings-winning-pattern" class="block font-semibold mb-1">Winning Pattern</label>
-                        <select id="settings-winning-pattern" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
-                            <option value="line">Any Single Line</option>
-                            <option value="corners">Four Corners</option>
-                            <option value="x-pattern">X Pattern</option>
-                            <option value="frame">Outside Frame</option>
-                            <option value="blackout">Blackout / Coverall</option>
-                        </select>
-                    </div>
+                <div class="mb-4">
+                    <label for="settings-game-name" class="block font-semibold mb-1" data-lang="sessionGameNameLabel">Game Name (for this session)</label>
+                    <input type="text" id="settings-game-name" class="w-full p-3 border border-stone-300 rounded-lg">
                 </div>
-                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                        <label for="settings-marking-type" class="block font-semibold mb-1">Card Marking Style</label>
-                        <select id="settings-marking-type" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
-                            <option value="auto" selected>Automatic Marking</option>
-                            <option value="manual">Manual Marking (Player taps)</option>
+                        <label for="settings-winning-pattern" class="block font-semibold mb-1" data-lang="winningPatternLabel">Winning Pattern</label>
+                        <select id="settings-winning-pattern" class="w-full p-3 border border-stone-300 rounded-lg bg-white">
+                           <!-- Options will be populated by JS -->
                         </select>
                     </div>
                     <div>
-                        <!-- This is a placeholder for alignment, could be other settings -->
+                        <label for="settings-marking-type" class="block font-semibold mb-1" data-lang="markingStyleLabel">Card Marking Style</label>
+                        <select id="settings-marking-type" class="w-full p-3 border border-stone-300 rounded-lg bg-white">
+                            <!-- Options will be populated by JS -->
+                        </select>
                     </div>
                 </div>
-                <p class="text-sm text-gray-500 mb-6">Note: Changing these settings will only affect this game session, not the saved version.</p>
+                <div id="swap-paired-list-container" class="mb-6 hidden">
+                    <div class="flex items-center">
+                       <input type="checkbox" id="swap-paired-list-toggle" class="h-4 w-4 text-orange-600 border-stone-300 rounded focus:ring-orange-500">
+                       <label for="swap-paired-list-toggle" class="ml-2 block text-sm font-medium text-stone-900" data-lang="swapCallDisplay">Swap Call & Display items for this session</label>
+                    </div>
+                </div>
                 <div class="mt-6 flex gap-4">
-                    <button id="proceed-to-lobby-btn" class="flex-1 bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-indigo-700 transition">Proceed to Lobby</button>
-                    <button onclick="switchView('host-dashboard-view')" class="flex-1 bg-gray-200 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+                    <button id="proceed-to-lobby-btn" class="flex-1 bg-orange-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-orange-700 transition" data-lang="proceedToLobby">Proceed to Lobby</button>
+                    <button onclick="switchView('host-dashboard-view')" class="flex-1 bg-amber-200 text-stone-800 font-semibold py-3 rounded-lg hover:bg-amber-300 transition" data-lang="cancel">Cancel</button>
                 </div>
             </div>
         </div>
-
 
         <!-- ===== Host: Game Lobby ===== -->
         <div id="host-lobby-view" class="view text-center">
-            <h2 class="text-3xl font-bold mb-4" id="lobby-game-name">Game Lobby</h2>
+            <h2 class="text-3xl font-bold mb-4 text-orange-800" id="lobby-game-name">Game Lobby</h2>
             <div class="bg-white p-8 rounded-xl shadow-lg">
-                <p class="text-gray-600 mb-2">Share this code with your players:</p>
-                <p id="lobby-join-code" class="text-5xl font-extrabold bg-gray-100 p-4 rounded-lg tracking-widest mb-4">...LOADING...</p>
+                <p class="text-stone-600 mb-2" data-lang="shareCode">Share this code with your players:</p>
+                <p id="lobby-join-code" class="text-5xl font-extrabold font-heading bg-amber-100 text-orange-900 p-4 rounded-lg tracking-widest mb-4">...LOADING...</p>
                 <div id="lobby-qrcode-container" class="mb-6 flex flex-col items-center"></div>
-                <h3 class="text-xl font-semibold mb-4">Players Joined:</h3>
+                <h3 class="text-xl font-semibold mb-4 font-heading" data-lang="playersJoined">Players Joined:</h3>
                 <div id="player-list" class="text-left max-h-40 overflow-y-auto border rounded-lg p-2">
-                    <p class="text-center text-gray-500">(Players will appear here as they join)</p>
+                    <!-- Player list or empty message appears here -->
                 </div>
-                <button id="start-game-btn" class="mt-8 w-full bg-green-500 text-white font-bold py-4 text-xl rounded-lg shadow-lg hover:bg-green-600 transition">Start Game!</button>
+                <button id="start-game-btn" class="mt-8 w-full bg-emerald-600 text-white font-bold py-4 text-xl rounded-lg shadow-lg hover:bg-emerald-700 transition" data-lang="startGame">Start Game!</button>
             </div>
-             <button onclick="switchView('host-dashboard-view')" class="mt-6 text-sm text-indigo-600 hover:underline">End Lobby & Go Back</button>
+             <button onclick="switchView('host-dashboard-view')" class="mt-6 text-sm text-orange-700 hover:underline" data-lang="endLobby">End Lobby & Go Back</button>
         </div>
 
         <!-- ===== Host: Live Game View ===== -->
         <div id="host-game-view" class="view">
             <div class="flex justify-between items-center mb-4">
-                 <h2 id="host-game-name" class="text-3xl font-bold">Live Game</h2>
-                 <p id="host-game-pattern" class="text-lg font-medium text-indigo-600"></p>
+                 <h2 id="host-game-name" class="text-3xl font-bold text-orange-800" data-lang="liveGame">Live Game</h2>
+                 <p id="host-game-pattern" class="text-lg font-medium text-orange-700"></p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Left Column: Caller -->
                 <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-lg text-center">
-                    <p class="text-lg text-gray-500 mb-2">Next Item</p>
-                    <div id="called-item-display" class="text-5xl md:text-7xl font-extrabold text-indigo-600 mb-6 h-32 flex items-center justify-center p-4 break-words">...</div>
-                    <button id="call-next-btn" class="w-full bg-indigo-600 text-white font-bold py-3 text-lg rounded-lg shadow-md hover:bg-indigo-700 transition">Call Next</button>
+                    <p class="text-lg text-stone-500 mb-2" data-lang="nextItem">Next Item</p>
+                    <div id="called-item-display" class="text-5xl md:text-7xl font-black font-heading text-orange-700 mb-6 h-32 flex items-center justify-center p-4 break-words">...</div>
+                    <button id="call-next-btn" class="w-full bg-orange-600 text-white font-bold py-3 text-lg rounded-lg shadow-md hover:bg-orange-700 transition" data-lang="callNext">Call Next</button>
                 </div>
                 <!-- Right Column: History -->
                 <div class="bg-white p-6 rounded-xl shadow-lg">
-                     <h3 class="font-bold text-xl mb-3 text-center">Call History</h3>
-                     <div id="call-history" class="text-gray-600 text-center h-48 overflow-y-auto">
-                        (Called items will appear here)
+                     <h3 class="font-bold text-xl mb-3 text-center font-heading" data-lang="callHistory">Call History</h3>
+                     <div id="call-history" class="text-stone-600 text-center h-48 overflow-y-auto">
+                        <!-- History or empty message appears here -->
                      </div>
                 </div>
             </div>
-            <button id="end-game-btn" class="mt-6 w-full md:w-auto bg-red-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-red-600 transition">End Game for All Players</button>
+            <button id="end-game-btn" class="mt-6 w-full md:w-auto bg-red-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-red-700 transition" data-lang="endGameForAll">End Game for All Players</button>
         </div>
 
 
         <!-- ===== Player: Join Game View ===== -->
         <div id="player-join-view" class="view">
-            <h2 class="text-3xl font-bold mb-6 text-center">Join a Game</h2>
+            <h2 class="text-3xl font-bold mb-6 text-center text-orange-800" data-lang="joinAGame">Join a Game</h2>
             <div class="bg-white p-8 rounded-xl shadow-lg max-w-sm mx-auto">
                 <div class="mb-4">
-                    <label for="game-code" class="block font-semibold mb-1">Game Code</label>
-                    <input type="text" id="game-code" placeholder="e.g., ABC123" class="w-full p-3 border border-gray-300 rounded-lg uppercase">
+                    <label for="game-code" class="block font-semibold mb-1" data-lang="gameCodeLabel">Game Code</label>
+                    <input type="text" id="game-code" data-lang-placeholder="gameCodePlaceholder" placeholder="e.g., ABC123" class="w-full p-3 border border-stone-300 rounded-lg uppercase">
                 </div>
                 <div class="mb-6">
-                    <label for="player-name" class="block font-semibold mb-1">Your Nickname</label>
-                    <input type="text" id="player-name" placeholder="Enter a name" class="w-full p-3 border border-gray-300 rounded-lg">
+                    <label for="player-name" class="block font-semibold mb-1" data-lang="nicknameLabel">Your Nickname</label>
+                    <input type="text" id="player-name" data-lang-placeholder="nicknamePlaceholder" placeholder="Enter a name" class="w-full p-3 border border-stone-300 rounded-lg">
                 </div>
-                 <div id="join-game-error" class="text-red-500 text-sm mb-4 text-center hidden"></div>
-                <button id="join-game-btn" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-indigo-700 transition">Join Game</button>
-                 <button onclick="switchView('initial-view')" class="mt-4 w-full text-sm text-indigo-600 hover:underline">Back</button>
+                 <div id="join-game-error" class="text-red-600 text-sm mb-4 text-center hidden"></div>
+                <button id="join-game-btn" class="w-full bg-orange-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-orange-700 transition" data-lang="joinGame">Join Game</button>
+                 <button onclick="switchView('initial-view')" class="mt-4 w-full text-sm text-orange-700 hover:underline" data-lang="back">Back</button>
             </div>
         </div>
 
@@ -286,19 +296,18 @@
              <div class="bg-white p-6 rounded-xl shadow-lg">
                  <div class="flex justify-between items-center mb-4 text-center">
                     <div>
-                        <p class="text-gray-500">Called Item:</p>
-                        <p id="player-called-item" class="text-3xl md:text-5xl font-bold text-indigo-600">...</p>
+                        <p class="text-stone-500" data-lang="calledItem">Called Item:</p>
+                        <p id="player-called-item" class="text-3xl md:text-5xl font-bold font-heading text-orange-700">...</p>
                     </div>
                     <div>
-                         <p class="text-gray-500">Goal:</p>
-                        <p id="player-game-pattern" class="text-lg font-medium text-indigo-600"></p>
+                         <p class="text-stone-500" data-lang="goal">Goal:</p>
+                        <p id="player-game-pattern" class="text-lg font-medium text-orange-700"></p>
                     </div>
                 </div>
-                <div id="player-bingo-card" class="bingo-card p-2 bg-gray-100 rounded-lg">
+                <div id="player-bingo-card" class="bingo-card p-2 bg-amber-100 rounded-lg">
                     <!-- BINGO card cells will be generated by JS -->
                 </div>
-                <p id="manual-mark-helper" class="text-center text-sm text-indigo-600 mt-4 hidden">Tap the squares on your card as they are called!</p>
-                <button id="bingo-btn" class="mt-6 w-full bg-green-500 text-white font-bold py-4 text-2xl rounded-lg shadow-lg hover:bg-green-600 transition disabled:bg-gray-400" disabled>BINGO!</button>
+                <button id="bingo-btn" class="mt-6 w-full bg-emerald-600 text-white font-bold py-4 text-2xl rounded-lg shadow-lg hover:bg-emerald-700 transition disabled:bg-stone-400" disabled>BINGO!</button>
              </div>
         </div>
 
@@ -307,12 +316,12 @@
     <!-- ===== Host: Bingo Verification Modal ===== -->
     <div id="verification-modal" class="modal-overlay hidden">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md m-4">
-            <h2 class="text-2xl font-bold text-center mb-2">Bingo Call!</h2>
-            <p id="verification-player-name" class="text-center text-lg font-semibold text-indigo-600 mb-4"></p>
-            <div id="verification-bingo-card" class="bingo-card p-2 bg-gray-100 rounded-lg"></div>
+            <h2 class="text-2xl font-bold text-center mb-2 font-heading" data-lang="bingoCall">Bingo Call!</h2>
+            <p id="verification-player-name" class="text-center text-lg font-semibold text-orange-700 mb-4"></p>
+            <div id="verification-bingo-card" class="bingo-card p-2 bg-amber-100 rounded-lg"></div>
             <div class="mt-6 flex gap-4">
-                <button id="deny-win-btn" class="flex-1 bg-gray-200 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-300 transition">Invalid Win</button>
-                <button id="confirm-win-btn" class="flex-1 bg-green-500 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-green-600 transition">Confirm Winner</button>
+                <button id="deny-win-btn" class="flex-1 bg-amber-200 text-stone-800 font-semibold py-3 rounded-lg hover:bg-amber-300 transition" data-lang="invalidWin">Invalid Win</button>
+                <button id="confirm-win-btn" class="flex-1 bg-emerald-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-emerald-700 transition" data-lang="confirmWinner">Confirm Winner</button>
             </div>
         </div>
     </div>
@@ -320,9 +329,9 @@
     <!-- ===== Player: Game Ended Modal ===== -->
     <div id="game-ended-modal" class="modal-overlay hidden">
         <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm m-4 text-center">
-             <h2 class="text-2xl font-bold text-center mb-4">Game Over</h2>
-             <p id="game-ended-message" class="text-gray-600 mb-6">The host has ended the game. Thanks for playing!</p>
-             <button onclick="window.location.reload()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-indigo-700 transition">Back to Home</button>
+             <h2 class="text-2xl font-bold text-center mb-4 font-heading" data-lang="gameOver">Game Over</h2>
+             <p id="game-ended-message" class="text-stone-600 mb-6"></p>
+             <button onclick="window.location.reload()" class="w-full bg-orange-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-orange-700 transition" data-lang="backToHome">Back to Home</button>
         </div>
     </div>
 
@@ -368,17 +377,136 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // --- i18n & Language ---
+        const translations = {
+            en: {
+                appTitle: "Bingo Night!", welcomeMessage: "Welcome! Are you hosting or playing today?", hostAGame: "Host a Game", joinAGame: "Join a Game",
+                hostLoginTitle: "Host Login / Sign Up", emailLabel: "Email", emailPlaceholder: "you@example.com", passwordLabel: "Password", passwordPlaceholder: "••••••••",
+                login: "Log In", signUp: "Sign Up", backToHome: "Back to Home", yourGames: "Your Games", newGame: "+ New Game", logout: "Logout",
+                createGameTitle: "Create a Custom Bingo Game", editGameTitle: "Edit", gameNameLabel: "Game Name", gameNamePlaceholder: "e.g., Baby Shower Fun",
+                winningPatternLabel: "Winning Pattern", listFormatLabel: "List Format", simpleList: "Simple List (Word appears on card)", pairedList: "Paired List (Call:Display on card)",
+                gridSizeLabel: "Grid Size", markingStyleLabel: "Card Marking Style", includeFreeSpace: "Include \"FREE\" space", manualMarkHelper: "In Manual mode, players must tap the correct square on their card to mark it.",
+                bingoItemsLabel: "Bingo Items", saveGame: "Save Game", updateGame: "Update Game", cancel: "Cancel", reviewSettingsTitle: "Review Game Settings", sessionGameNameLabel: "Game Name (for this session)",
+                swapCallDisplay: "Swap Call & Display items for this session", proceedToLobby: "Proceed to Lobby", shareCode: "Share this code with your players:",
+                playersJoined: "Players Joined:", startGame: "Start Game!", endLobby: "End Lobby & Go Back", liveGame: "Live Game", nextItem: "Next Item", callNext: "Call Next",
+                callHistory: "Call History", endGameForAll: "End Game for All Players", backToDashboard: "Back to Dashboard", gameCodeLabel: "Game Code", gameCodePlaceholder: "e.g., ABC123",
+                nicknameLabel: "Your Nickname", nicknamePlaceholder: "Enter a name", joinGame: "Join Game", back: "Back", calledItem: "Called Item:", goal: "Goal:",
+                bingoCall: "Bingo Call!", invalidWin: "Invalid Win", confirmWinner: "Confirm Winner", gameOver: "Game Over",
+                delete: "Delete", winnerIs: "Winner:", winnerIsNamed: "Winner: {winner}", youWon: "YOU WON!",
+                // Dynamic strings
+                wordCountHelper: "You need at least {num} {itemType} for a {size}x{size} grid.",
+                wordCountHelperSimple: "items", wordCountHelperPaired: "pairs",
+                simpleListPlaceholder: "Enter one word or phrase per line...\nTeamwork\nSynergy\nQ4 Goals",
+                pairedListPlaceholder: "Format: Item To Call:Item on Card (one per line)\nExample:\nWhat is 2+2?:4\nCapital of France:Paris",
+                noGames: "You haven't created any games yet. Click \"+ New Game\" to start!",
+                playersWillAppear: "(Players will appear here as they join)",
+                historyWillAppear: "(Called items will appear here)",
+                loggedInAs: "Logged in as: {email}",
+                gameEndedByHost: "The host has ended the game. Thanks for playing!",
+                gameEndedWinner: "The game has ended. The winner is {winner}!",
+                confirmDelete: "Permanently delete this game? This cannot be undone.",
+                enterCodeAndName: "Please enter a game code and a nickname.",
+                gameNotFound: "Game not found.", gameNotAvailable: "Game has already started or ended.",
+                couldNotJoin: "Could not join game. Please check the code and try again.",
+                gameNameRequired: "Please enter a name for your game.",
+                invalidPair: "Invalid pair", emptyCallDisplay: "Empty call/display in pair",
+                parsingError: "Parsing Error", notEnoughItems: "Need at least {num} {itemType} (you have {count}).",
+                couldNotSave: "Could not save the game. Please try again.",
+                // Patterns, Sizes, Marking Types
+                p_line: 'Any Single Line', p_corners: 'Four Corners', p_x: 'X Pattern', p_frame: 'Outside Frame', p_blackout: 'Blackout / Coverall',
+                s_3: '3x3 (Quick Game)', s_4: '4x4 (Classic Square)', s_5: '5x5 (Standard Bingo)',
+                m_auto: 'Automatic (Easy)', m_manual: 'Manual (Interactive)'
+            },
+            zh: {
+                appTitle: "賓果之夜！", welcomeMessage: "歡迎！今天您是主辦方還是玩家？", hostAGame: "主辦遊戲", joinAGame: "加入遊戲",
+                hostLoginTitle: "主辦方登入／註冊", emailLabel: "電子郵件", emailPlaceholder: "you@example.com", passwordLabel: "密碼", passwordPlaceholder: "••••••••",
+                login: "登入", signUp: "註冊", backToHome: "返回首頁", yourGames: "您的遊戲", newGame: "+ 新增遊戲", logout: "登出",
+                createGameTitle: "建立自訂賓果遊戲", editGameTitle: "編輯", gameNameLabel: "遊戲名稱", gameNamePlaceholder: "例如：新生兒派對",
+                winningPatternLabel: "勝利圖案", listFormatLabel: "列表格式", simpleList: "簡易列表 (卡片上顯示相同項目)", pairedList: "配對列表 (呼叫:卡片顯示)",
+                gridSizeLabel: "網格大小", markingStyleLabel: "卡片標記方式", includeFreeSpace: "包含「免費」格子", manualMarkHelper: "在手動模式下，玩家必須點擊卡片上正確的方格才能標記。",
+                bingoItemsLabel: "賓果項目", saveGame: "儲存遊戲", updateGame: "更新遊戲", cancel: "取消", reviewSettingsTitle: "預覽遊戲設定", sessionGameNameLabel: "遊戲名稱 (本次遊戲)",
+                swapCallDisplay: "本次遊戲交換「呼叫」與「顯示」的項目", proceedToLobby: "前往大廳", shareCode: "與您的玩家分享此代碼：",
+                playersJoined: "已加入的玩家：", startGame: "開始遊戲！", endLobby: "結束大廳並返回", liveGame: "遊戲進行中", nextItem: "下一個項目", callNext: "呼叫下一項",
+                callHistory: "呼叫紀錄", endGameForAll: "為所有玩家結束遊戲", backToDashboard: "返回儀表板", gameCodeLabel: "遊戲代碼", gameCodePlaceholder: "例如：ABC123",
+                nicknameLabel: "您的暱稱", nicknamePlaceholder: "輸入一個名稱", joinGame: "加入遊戲", back: "返回", calledItem: "目前項目：", goal: "目標：",
+                bingoCall: "賓果！", invalidWin: "無效的勝利", confirmWinner: "確認勝利者", gameOver: "遊戲結束",
+                delete: "刪除", winnerIs: "勝利者是：", winnerIsNamed: "勝利者是 {winner}", youWon: "你贏了！",
+                // Dynamic strings
+                wordCountHelper: "一個 {size}x{size} 的網格至少需要 {num} 個{itemType}。",
+                wordCountHelperSimple: "項目", wordCountHelperPaired: "配對",
+                simpleListPlaceholder: "每行輸入一個單詞或短語...\n團隊合作\n協同效應\n第四季度目標",
+                pairedListPlaceholder: "格式：呼叫的項目:卡片上顯示的項目 (每行一對)\n例如：\n2+2等於多少？:4\n法國的首都是哪裡？:巴黎",
+                noGames: "您尚未建立任何遊戲。點擊「+ 新增遊戲」開始！",
+                playersWillAppear: "（玩家將在此處顯示）",
+                historyWillAppear: "（呼叫過的項目將在此處顯示）",
+                loggedInAs: "登入身分：{email}",
+                gameEndedByHost: "主辦方已結束遊戲，感謝您的參與！",
+                gameEndedWinner: "遊戲已結束，勝利者是 {winner}！",
+                confirmDelete: "確定要永久刪除此遊戲嗎？此操作無法復原。",
+                enterCodeAndName: "請輸入遊戲代碼和暱稱。",
+                gameNotFound: "找不到遊戲。", gameNotAvailable: "遊戲已經開始或結束。",
+                couldNotJoin: "無法加入遊戲。請檢查代碼後再試一次。",
+                gameNameRequired: "請為您的遊戲輸入一個名稱。",
+                invalidPair: "無效的配對", emptyCallDisplay: "配對中的呼叫/顯示項目為空",
+                parsingError: "解析錯誤", notEnoughItems: "至少需要 {num} 個{itemType} (您有 {count} 個)。",
+                couldNotSave: "無法儲存遊戲，請再試一次。",
+                 // Patterns, Sizes, Marking Types
+                p_line: '任何單行', p_corners: '四個角落', p_x: 'X 圖案', p_frame: '外框', p_blackout: '全滿',
+                s_3: '3x3 (快速遊戲)', s_4: '4x4 (經典方形)', s_5: '5x5 (標準賓果)',
+                m_auto: '自動 (簡單)', m_manual: '手動 (互動)'
+            }
+        };
+        let currentLang = 'en';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
+            localStorage.setItem('bingoLang', lang);
+
+            if (lang === 'en') {
+                langEnBtn.classList.add('text-orange-700');
+                langEnBtn.classList.remove('text-stone-600');
+                langZhBtn.classList.add('text-stone-600');
+                langZhBtn.classList.remove('text-orange-700');
+            } else {
+                langZhBtn.classList.add('text-orange-700');
+                langZhBtn.classList.remove('text-stone-600');
+                langEnBtn.classList.add('text-stone-600');
+                langEnBtn.classList.remove('text-orange-700');
+            }
+
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                const key = el.dataset.lang;
+                el.textContent = translations[lang][key] || el.textContent;
+            });
+             document.querySelectorAll('[data-lang-placeholder]').forEach(el => {
+                const key = el.dataset.langPlaceholder;
+                el.placeholder = translations[lang][key] || el.placeholder;
+            });
+            populateSelects();
+            updateWordHelper();
+            renderGames(cachedGames); // Re-render game list with new language
+        }
+
+        function t(key, replacements = {}) {
+            let text = translations[currentLang][key] || key;
+            for(const placeholder in replacements) {
+                text = text.replace(`{${placeholder}}`, replacements[placeholder]);
+            }
+            return text;
+        }
+
         // --- Global State ---
         let currentUser = null;
         let currentSessionId = null; // for host
         let currentPlayerState = { // for player
             sessionId: null, playerId: null, playerName: null,
-            card: [], markedIndices: new Set(), gameDef: null,
+            card: [], markedIndices: new Set(), gameDef: null, calledItems: new Set()
         };
         let unsubscribeGames = null;
         let unsubscribePlayers = null; 
         let unsubscribeSession = null;
-        let lastKnownCalledItems = [];
+        let cachedGames = [];
 
         // --- Basic View Switching Logic ---
         let currentView = 'initial-view';
@@ -388,11 +516,6 @@
             currentView = viewId;
         }
         window.switchView = switchView; // Make globally accessible
-
-        const PATTERN_NAMES = {
-            'line': 'Any Single Line', 'corners': 'Four Corners', 'x-pattern': 'X Pattern',
-            'frame': 'Outside Frame', 'blackout': 'Blackout'
-        };
 
         // --- UI Element References ---
         const verificationModal = document.getElementById('verification-modal');
@@ -443,6 +566,8 @@
         const createEditTitle = document.getElementById('create-edit-title');
         const editingGameIdInput = document.getElementById('editing-game-id');
         const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const langEnBtn = document.getElementById('lang-en-btn');
+        const langZhBtn = document.getElementById('lang-zh-btn');
         
         // Settings View UI
         const settingsGameIdInput = document.getElementById('settings-game-id');
@@ -450,14 +575,31 @@
         const settingsWinningPatternSelect = document.getElementById('settings-winning-pattern');
         const settingsMarkingTypeSelect = document.getElementById('settings-marking-type');
         const proceedToLobbyBtn = document.getElementById('proceed-to-lobby-btn');
+        const swapPairedListContainer = document.getElementById('swap-paired-list-container');
+        const swapPairedListToggle = document.getElementById('swap-paired-list-toggle');
+
+        function populateSelects() {
+            const patternOptions = { 'line': 'p_line', 'corners': 'p_corners', 'x-pattern': 'p_x', 'frame': 'p_frame', 'blackout': 'p_blackout' };
+            const sizeOptions = { '3': 's_3', '4': 's_4', '5': 's_5' };
+            const markingOptions = { 'auto': 'm_auto', 'manual': 'm_manual' };
+            
+            [winningPatternSelect, settingsWinningPatternSelect].forEach(select => {
+                select.innerHTML = Object.keys(patternOptions).map(k => `<option value="${k}">${t(patternOptions[k])}</option>`).join('');
+            });
+            gridSizeSelect.innerHTML = Object.keys(sizeOptions).map(k => `<option value="${k}">${t(sizeOptions[k])}</option>`).join('');
+            [markingTypeSelect, settingsMarkingTypeSelect].forEach(select => {
+                select.innerHTML = Object.keys(markingOptions).map(k => `<option value="${k}">${t(markingOptions[k])}</option>`).join('');
+            });
+        }
 
         // --- Event Listeners & UI Updaters ---
         function resetHostGameView() {
-            calledItemDisplay.innerHTML = "..."; // Use innerHTML to clear potential winner span
+            calledItemDisplay.innerHTML = "...";
             callNextBtn.disabled = false;
-            endGameBtn.textContent = "End Game for All Players";
-            callHistory.innerHTML = "(Called items will appear here)";
-            hostGameName.textContent = "Live Game";
+            callNextBtn.textContent = t('callNext');
+            endGameBtn.textContent = t('endGameForAll');
+            callHistory.innerHTML = t('historyWillAppear');
+            hostGameName.textContent = t('liveGame');
             hostGamePattern.textContent = "";
         }
 
@@ -466,30 +608,41 @@
             const hasFreeSpace = freeSpaceToggle.checked;
             const requiredWords = hasFreeSpace ? (size * size) - 1 : (size * size);
             const listType = listTypeSelect.value;
-            if(listType === 'simple') {
-                gameWordsTextarea.placeholder = `Enter one word or phrase per line...\nTeamwork\nSynergy\nQ4 Goals`;
-                wordCountHelper.textContent = `You need at least ${requiredWords} items for a ${size}x${size} grid.`;
-            } else { // paired
-                gameWordsTextarea.placeholder = `Format: Item To Call:Item on Card (one per line)\nExample:\nWhat is 2+2?:4\nCapital of France:Paris`;
-                wordCountHelper.textContent = `You need at least ${requiredWords} pairs (one per line) for a ${size}x${size} grid.`;
-            }
+
+            const itemTypeKey = listType === 'simple' ? 'wordCountHelperSimple' : 'wordCountHelperPaired';
+            wordCountHelper.textContent = t('wordCountHelper', { num: requiredWords, itemType: t(itemTypeKey), size: size });
+            
+            const placeholderKey = listType === 'simple' ? 'simpleListPlaceholder' : 'pairedListPlaceholder';
+            gameWordsTextarea.placeholder = t(placeholderKey);
         }
+
+        langEnBtn.addEventListener('click', () => setLanguage('en'));
+        langZhBtn.addEventListener('click', () => setLanguage('zh'));
         gridSizeSelect.addEventListener('change', updateWordHelper);
         freeSpaceToggle.addEventListener('change', updateWordHelper);
         listTypeSelect.addEventListener('change', updateWordHelper);
+        markingTypeSelect.addEventListener('change', () => {
+            manualMarkHelper.classList.toggle('hidden', markingTypeSelect.value !== 'manual');
+        });
         
         // --- Auth Logic ---
         signupBtn.addEventListener('click', async () => {
             try {
                 authError.classList.add('hidden');
                 await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-            } catch (error) { authError.textContent = error.message; authError.classList.remove('hidden'); }
+            } catch (error) { 
+                authError.textContent = error.message; 
+                authError.classList.remove('hidden'); 
+            }
         });
         loginBtn.addEventListener('click', async () => {
             try {
                 authError.classList.add('hidden');
                 await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-            } catch (error) { authError.textContent = error.message; authError.classList.remove('hidden'); }
+            } catch (error) { 
+                authError.textContent = error.message; 
+                authError.classList.remove('hidden'); 
+            }
         });
         logoutBtn.addEventListener('click', async () => await signOut(auth));
         
@@ -507,7 +660,7 @@
             const requiredWords = hasFreeSpace ? (gridSize * gridSize) - 1 : (gridSize * gridSize);
             let words = [];
             
-            if (!gameName) { createGameError.textContent = 'Please enter a name for your game.'; createGameError.classList.remove('hidden'); return; }
+            if (!gameName) { createGameError.textContent = t('gameNameRequired'); createGameError.classList.remove('hidden'); return; }
             try {
                 if (listType === 'simple') {
                     words = rawWords.split('\n').map(w => w.trim()).filter(Boolean);
@@ -515,41 +668,31 @@
                     words = rawWords.split('\n').map(pair => {
                         if (!pair.trim()) return null;
                         const parts = pair.split(':');
-                        if (parts.length !== 2) throw new Error(`Invalid pair: "${pair}"`);
-                        const [call, display] = parts.map(p => p.trim());
-                        if (!call || !display) throw new Error(`Empty call/display: "${pair}"`);
+                        if (parts.length < 2) throw new Error(`${t('invalidPair')}: "${pair}"`);
+                        const call = parts.shift().trim();
+                        const display = parts.join(':').trim();
+                        if (!call || !display) throw new Error(`${t('emptyCallDisplay')}: "${pair}"`);
                         return { call, display };
                     }).filter(Boolean);
                 }
-            } catch (error) { createGameError.textContent = `Parsing Error: ${error.message}.`; createGameError.classList.remove('hidden'); return; }
+            } catch (error) { createGameError.textContent = `${t('parsingError')}: ${error.message}.`; createGameError.classList.remove('hidden'); return; }
             if (words.length < requiredWords) {
-                const itemType = listType === 'simple' ? 'items' : 'pairs';
-                createGameError.textContent = `Need at least ${requiredWords} ${itemType} (you have ${words.length}).`;
+                const itemTypeKey = listType === 'simple' ? 'wordCountHelperSimple' : 'wordCountHelperPaired';
+                createGameError.textContent = t('notEnoughItems', {num: requiredWords, itemType: t(itemTypeKey), count: words.length });
                 createGameError.classList.remove('hidden'); return;
             }
 
-            const gameData = {
-                name: gameName, listType, words, hasFreeSpace, gridSize, winningPattern, markingType,
-            };
-
+            const gameData = { name: gameName, listType, words, hasFreeSpace, gridSize, winningPattern, markingType };
             try {
                 const editingId = editingGameIdInput.value;
                 if (editingId) {
-                    // Update existing game
-                    const gameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${editingId}`;
-                    await updateDoc(doc(db, gameDocPath), gameData);
+                    await updateDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/games/${editingId}`), gameData);
                 } else {
-                    // Create new game
-                    const gamesCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/games`;
-                    await addDoc(collection(db, gamesCollectionPath), {
-                        ...gameData,
-                        createdAt: serverTimestamp()
-                    });
+                    await addDoc(collection(db, `artifacts/${appId}/users/${currentUser.uid}/games`), { ...gameData, createdAt: serverTimestamp() });
                 }
-                
                 resetCreateGameForm();
                 switchView('host-dashboard-view');
-            } catch (e) { console.error("Error saving game: ", e); createGameError.textContent = "Could not save game."; createGameError.classList.remove('hidden'); }
+            } catch (e) { console.error("Error saving game: ", e); createGameError.textContent = t('couldNotSave'); createGameError.classList.remove('hidden'); }
         });
 
         gameListContainer.addEventListener('click', (e) => {
@@ -557,53 +700,41 @@
             const target = e.target.closest('button');
             if (!target) return;
             const gameId = target.dataset.gameId;
-            if (target.classList.contains('host-btn')) startHostingGame(gameId);
+            if (target.classList.contains('host-btn')) showHostSettings(gameId);
             if (target.classList.contains('delete-btn')) deleteGame(gameId);
             if (target.classList.contains('edit-btn')) editGame(gameId);
         });
         
         async function editGame(gameId) {
-            if (!currentUser) return;
-            try {
-                const gameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${gameId}`;
-                const gameDocSnap = await getDoc(doc(db, gameDocPath));
-                if (!gameDocSnap.exists()) return console.error("Game to edit not found!");
-                const game = gameDocSnap.data();
-                
-                // Populate the form
-                createEditTitle.textContent = "Edit Game";
-                editingGameIdInput.value = gameId;
-                gameNameInput.value = game.name;
-                winningPatternSelect.value = game.winningPattern;
-                listTypeSelect.value = game.listType;
-                gridSizeSelect.value = game.gridSize;
-                markingTypeSelect.value = game.markingType;
-                freeSpaceToggle.checked = game.hasFreeSpace;
+            const gameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${gameId}`;
+            const gameDocSnap = await getDoc(doc(db, gameDocPath));
+            if (!gameDocSnap.exists()) return console.error("Game to edit not found!");
+            const game = gameDocSnap.data();
+            
+            createEditTitle.textContent = t('editGameTitle');
+            editingGameIdInput.value = gameId;
+            gameNameInput.value = game.name;
+            winningPatternSelect.value = game.winningPattern;
+            listTypeSelect.value = game.listType;
+            gridSizeSelect.value = game.gridSize;
+            markingTypeSelect.value = game.markingType;
+            freeSpaceToggle.checked = game.hasFreeSpace;
 
-                let wordsText = "";
-                if(game.listType === 'simple') {
-                    wordsText = game.words.join('\n');
-                } else {
-                    wordsText = game.words.map(p => `${p.call}:${p.display}`).join('\n');
-                }
-                gameWordsTextarea.value = wordsText;
-                
-                saveGameBtn.textContent = "Update Game";
-                updateWordHelper();
-                switchView('create-game-view');
-
-            } catch (error) {
-                console.error("Error loading game for editing: ", error);
-            }
+            gameWordsTextarea.value = game.listType === 'simple' 
+                ? game.words.join('\n') 
+                : game.words.map(p => `${p.call}:${p.display}`).join('\n');
+            
+            saveGameBtn.textContent = t('updateGame');
+            updateWordHelper();
+            switchView('create-game-view');
         }
 
         function resetCreateGameForm() {
-            createEditTitle.textContent = "Create a Custom Bingo Game";
+            createEditTitle.textContent = t('createGameTitle');
             editingGameIdInput.value = "";
             gameNameInput.value = "";
             gameWordsTextarea.value = "";
-            saveGameBtn.textContent = "Save Game";
-            // Optionally reset selects to default
+            saveGameBtn.textContent = t('saveGame');
             winningPatternSelect.value = 'line';
             listTypeSelect.value = 'simple';
             gridSizeSelect.value = '5';
@@ -612,83 +743,54 @@
             updateWordHelper();
         }
         
-        // Add reset call to the "+ New Game" button click
         document.querySelector('button[onclick="switchView(\'create-game-view\')"]').addEventListener('click', resetCreateGameForm);
-        cancelEditBtn.addEventListener('click', resetCreateGameForm);
-
+        cancelEditBtn.addEventListener('click', () => { resetCreateGameForm(); switchView('host-dashboard-view'); });
 
         async function deleteGame(gameId) {
-            // Re-adding confirm here as it's a destructive action, can be replaced with a modal
-            if (!currentUser || !confirm("Permanently delete this game? This cannot be undone.")) return;
-            try {
-                const gameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${gameId}`;
-                await deleteDoc(doc(db, gameDocPath));
-            } catch (error) { console.error("Error deleting game: ", error); }
+            if (!currentUser || !confirm(t('confirmDelete'))) return;
+            await deleteDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/games/${gameId}`));
         }
 
-        async function startHostingGame(gameId) {
-            if (!currentUser) return;
-            try {
-                const gameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${gameId}`;
-                const gameDocSnap = await getDoc(doc(db, gameDocPath));
-                if (!gameDocSnap.exists()) return console.error("Game not found!");
-                const gameData = gameDocSnap.data();
+        async function showHostSettings(gameId) {
+            const gameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${gameId}`;
+            const gameDocSnap = await getDoc(doc(db, gameDocPath));
+            if (!gameDocSnap.exists()) return console.error("Game not found!");
+            const game = gameDocSnap.data();
 
-                // Populate and switch to the settings review view
-                settingsGameIdInput.value = gameId;
-                settingsGameNameInput.value = gameData.name;
-                settingsWinningPatternSelect.value = gameData.winningPattern;
-                settingsMarkingTypeSelect.value = gameData.markingType;
-                
-                switchView('host-settings-view');
-            } catch(error) {
-                console.error("Error preparing game settings: ", error);
-            }
+            settingsGameIdInput.value = gameId;
+            settingsGameNameInput.value = game.name;
+            settingsWinningPatternSelect.value = game.winningPattern;
+            settingsMarkingTypeSelect.value = game.markingType;
+
+            swapPairedListContainer.classList.toggle('hidden', game.listType !== 'paired');
+            if (game.listType === 'paired') swapPairedListToggle.checked = false;
+
+            switchView('host-settings-view');
         }
         
         proceedToLobbyBtn.addEventListener('click', async () => {
             if(!currentUser) return;
-
             const gameId = settingsGameIdInput.value;
             const originalGameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${gameId}`;
             const gameDocSnap = await getDoc(doc(db, originalGameDocPath));
-            if (!gameDocSnap.exists()) return console.error("Original game not found!");
+            if (!gameDocSnap.exists()) return;
             
-            // Create a temporary game definition with the overrides
-            const gameDataForSession = {
-                ...gameDocSnap.data(), // Start with original data
-                name: settingsGameNameInput.value, // Override with new settings
-                winningPattern: settingsWinningPatternSelect.value,
-                markingType: settingsMarkingTypeSelect.value,
-            };
-
-            resetHostGameView(); // FIX: Reset the host's game screen UI from any previous game
-
+            const gameDataForSession = { ...gameDocSnap.data(), name: settingsGameNameInput.value, winningPattern: settingsWinningPatternSelect.value, markingType: settingsMarkingTypeSelect.value };
+            if (gameDataForSession.listType === 'paired' && swapPairedListToggle.checked) {
+                gameDataForSession.words = gameDataForSession.words.map(p => ({ call: p.display, display: p.call }));
+            }
+            resetHostGameView(); 
             const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-            
-            const sessionsCollectionPath = `artifacts/${appId}/public/data/sessions`;
-            const sessionRef = await addDoc(collection(db, sessionsCollectionPath), {
-                gameId, 
-                hostId: currentUser.uid, 
-                gameDefinition: gameDataForSession, // Use the modified game data
-                joinCode,
-                status: 'lobby', 
-                createdAt: serverTimestamp(), 
-                calledItems: [], 
-                bingoCall: null
-            });
-            
+            const sessionRef = await addDoc(collection(db, `artifacts/${appId}/public/data/sessions`), { hostId: currentUser.uid, gameDefinition: gameDataForSession, joinCode, status: 'lobby', createdAt: serverTimestamp(), calledItems: [], bingoCall: null });
             currentSessionId = sessionRef.id;
             lobbyGameName.textContent = gameDataForSession.name;
             lobbyJoinCode.textContent = joinCode;
-
-            const joinUrl = `${window.location.origin}${window.location.pathname}?joinCode=${joinCode}`;
+            const joinUrl = `${window.location.origin}${window.location.pathname}?joinCode=${joinCode}&lang=${currentLang}`;
             const qr = qrcode(0, 'L');
             qr.addData(joinUrl);
             qr.make();
-            lobbyQrcodeContainer.innerHTML = qr.createImgTag(4, 8);
+            lobbyQrcodeContainer.innerHTML = qr.createImgTag(4, 8); 
             lobbyQrcodeContainer.firstChild.classList.add('mx-auto', 'rounded-lg', 'shadow-md');
-
             listenForPlayers(currentSessionId);
             listenForHostSessionUpdates();
             switchView('host-lobby-view');
@@ -696,14 +798,12 @@
 
         startGameBtn.addEventListener('click', async () => {
             if (!currentSessionId) return;
-            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
-            await updateDoc(doc(db, sessionDocPath), { status: 'active' });
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/sessions/${currentSessionId}`), { status: 'active' });
         });
 
         endGameBtn.addEventListener('click', async () => {
             if (!currentSessionId) return;
-            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
-            await updateDoc(doc(db, sessionDocPath), { status: 'ended_by_host' });
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/sessions/${currentSessionId}`), { status: 'ended_by_host' });
             switchView('host-dashboard-view');
         });
 
@@ -712,88 +812,32 @@
             const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
             const sessionDoc = await getDoc(doc(db, sessionDocPath));
             if (!sessionDoc.exists()) return;
-
             const { gameDefinition, calledItems } = sessionDoc.data();
-            const allItems = gameDefinition.words;
-            const availableItems = allItems.filter(item => {
+            const availableItems = gameDefinition.words.filter(item => {
                 const callValue = typeof item === 'object' ? item.call : item;
                 return !calledItems.some(called => (called.call || called) === callValue);
             });
-
             if (availableItems.length === 0) {
                 calledItemDisplay.textContent = "GAME OVER";
                 callNextBtn.disabled = true;
                 return;
             }
-
             const nextItem = availableItems[Math.floor(Math.random() * availableItems.length)];
             await updateDoc(doc(db, sessionDocPath), { calledItems: [...calledItems, nextItem] });
         });
 
         confirmWinBtn.addEventListener('click', async () => {
             if (!currentSessionId) return;
-            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
-            await updateDoc(doc(db, sessionDocPath), { status: 'finished' });
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/sessions/${currentSessionId}`), { status: 'finished' });
             verificationModal.classList.add('hidden');
         });
 
         denyWinBtn.addEventListener('click', async () => {
             if (!currentSessionId) return;
-            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
-            await updateDoc(doc(db, sessionDocPath), { bingoCall: null });
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/sessions/${currentSessionId}`), { bingoCall: null });
             verificationModal.classList.add('hidden');
         });
-
-        function listenForHostSessionUpdates() {
-            if (unsubscribeSession) unsubscribeSession();
-            if (!currentSessionId) return;
-            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
-            unsubscribeSession = onSnapshot(doc(db, sessionDocPath), (docSnap) => {
-                if (!docSnap.exists()) return;
-                const data = docSnap.data();
-
-                if (data.status === 'active' && currentView !== 'host-game-view') {
-                    hostGameName.textContent = data.gameDefinition.name;
-                    hostGamePattern.textContent = `Goal: ${PATTERN_NAMES[data.gameDefinition.winningPattern]}`;
-                    switchView('host-game-view');
-                }
-                if (data.status === 'finished') {
-                    calledItemDisplay.innerHTML = `Winner: <span class="text-green-500">${data.bingoCall.playerName}</span>`;
-                    callNextBtn.disabled = true;
-                    endGameBtn.textContent = "Back to Dashboard";
-                }
-                const latestItem = data.calledItems[data.calledItems.length - 1];
-                if(latestItem && data.status !== 'finished') {
-                    calledItemDisplay.textContent = latestItem.call || latestItem;
-                }
-                callHistory.innerHTML = data.calledItems.map(item => `<div>${item.call || item}</div>`).reverse().join('');
-                if (data.bingoCall) {
-                    renderVerificationCard(data.bingoCall);
-                    verificationModal.classList.remove('hidden');
-                } else {
-                    verificationModal.classList.add('hidden');
-                }
-            });
-        }
-
-        function renderVerificationCard(bingoCall) {
-            const { playerName, card, markedIndices, gameDef } = bingoCall;
-            const size = gameDef.gridSize;
-            verificationPlayerName.textContent = playerName;
-            verificationBingoCard.innerHTML = '';
-            verificationBingoCard.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-            card.forEach((word, index) => {
-                const cell = document.createElement('div');
-                cell.classList.add('bingo-cell', 'bg-white', 'shadow-sm', 'text-xs');
-                const displayWord = word.display || word;
-                if (displayWord === "FREE") {
-                    cell.textContent = "FREE"; cell.classList.add('free-space');
-                } else { cell.textContent = displayWord; }
-                if (markedIndices.includes(index)) { cell.classList.add('marked'); }
-                verificationBingoCard.appendChild(cell);
-            });
-        }
-
+        
         function listenForGames() {
             if (unsubscribeGames) unsubscribeGames(); 
             if (!currentUser) return;
@@ -816,25 +860,84 @@
         
         function renderPlayers(players) {
             playerList.innerHTML = players.length > 0
-                ? players.map(name => `<div class="p-2 border-b">${name}</div>`).join('')
-                : `<p class="text-center text-gray-500">(Players will appear here as they join)</p>`;
+                ? players.map(name => `<div class="p-2 border-b border-amber-200">${name}</div>`).join('')
+                : `<p class="text-center text-stone-500">${t('playersWillAppear')}</p>`;
         }
 
+        function renderVerificationCard(bingoCall) {
+            const { playerName, card, markedIndices, gameDef } = bingoCall;
+            const size = gameDef.gridSize;
+            verificationPlayerName.textContent = playerName;
+            verificationBingoCard.innerHTML = '';
+            verificationBingoCard.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            card.forEach((word, index) => {
+                const cell = document.createElement('div');
+                cell.classList.add('bingo-cell', 'bg-white', 'shadow-sm', 'text-xs');
+                const displayWord = word.display || word;
+                if (displayWord === "FREE") {
+                    cell.textContent = "FREE"; cell.classList.add('free-space');
+                } else { cell.textContent = displayWord; }
+                if (markedIndices.includes(index)) { cell.classList.add('marked'); }
+                verificationBingoCard.appendChild(cell);
+            });
+        }
+
+        function listenForHostSessionUpdates() {
+            if (unsubscribeSession) unsubscribeSession();
+            if (!currentSessionId) return;
+            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
+            unsubscribeSession = onSnapshot(doc(db, sessionDocPath), (docSnap) => {
+                if (!docSnap.exists()) return;
+                const data = docSnap.data();
+
+                if (data.status === 'active' && currentView !== 'host-game-view') {
+                    hostGameName.textContent = data.gameDefinition.name;
+                    const patternKey = { 'line': 'p_line', 'corners': 'p_corners', 'x-pattern': 'p_x', 'frame': 'p_frame', 'blackout': 'p_blackout' }[data.gameDefinition.winningPattern];
+                    hostGamePattern.textContent = `${t('goal')} ${t(patternKey)}`;
+                    switchView('host-game-view');
+                }
+                if (data.status === 'finished') {
+                    calledItemDisplay.innerHTML = `${t('winnerIsNamed', {winner: data.bingoCall.playerName})}`;
+                    callNextBtn.disabled = true;
+                    endGameBtn.textContent = t('backToDashboard');
+                }
+                const latestItem = data.calledItems[data.calledItems.length - 1];
+                if(latestItem && data.status !== 'finished') {
+                    calledItemDisplay.textContent = latestItem.call || latestItem;
+                }
+                callHistory.innerHTML = data.calledItems.length > 0 
+                    ? data.calledItems.map(item => `<div>${item.call || item}</div>`).reverse().join('')
+                    : t('historyWillAppear');
+
+                if (data.bingoCall && data.status !== 'finished') {
+                    renderVerificationCard(data.bingoCall);
+                    verificationModal.classList.remove('hidden');
+                } else {
+                    verificationModal.classList.add('hidden');
+                }
+            });
+        }
+        
         function renderGames(games) {
+            cachedGames = games; // Cache for language switching
             gameListContainer.innerHTML = games.length > 0
-                ? games.map(game => `
-                    <div class="flex items-center justify-between p-4 border-b last:border-b-0">
+                ? games.map(game => {
+                    const patternKey = { 'line': 'p_line', 'corners': 'p_corners', 'x-pattern': 'p_x', 'frame': 'p_frame', 'blackout': 'p_blackout' }[game.winningPattern] || 'p_line';
+                    const markingKey = { 'auto': 'm_auto', 'manual': 'm_manual' }[game.markingType] || 'm_auto';
+                    return `
+                    <div class="flex items-center justify-between p-4 border-b border-amber-100 last:border-b-0">
                         <div>
-                            <h3 class="font-bold text-lg">${game.name}</h3>
-                            <p class="text-sm text-gray-500">${game.gridSize || 5}x${game.gridSize || 5} • ${PATTERN_NAMES[game.winningPattern] || 'Single Line'} • <span class="capitalize">${game.markingType || 'auto'}</span> Mark</p>
+                            <h3 class="font-bold text-lg font-heading">${game.name}</h3>
+                            <p class="text-sm text-stone-500">${game.gridSize || 5}x${game.gridSize || 5} • ${t(patternKey)} • <span class="capitalize">${t(markingKey)}</span></p>
                         </div>
                         <div class="flex gap-2">
-                            <button data-game-id="${game.id}" class="host-btn bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg text-sm hover:bg-blue-600 transition">Host</button>
-                            <button data-game-id="${game.id}" class="edit-btn bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg text-sm hover:bg-yellow-600 transition">Edit</button>
-                            <button data-game-id="${game.id}" class="delete-btn bg-red-500 text-white font-semibold py-2 px-4 rounded-lg text-sm hover:bg-red-600 transition">Delete</button>
+                            <button data-game-id="${game.id}" class="host-btn bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg text-sm hover:bg-sky-700 transition">${t('hostAGame')}</button>
+                            <button data-game-id="${game.id}" class="edit-btn bg-amber-500 text-white font-semibold py-2 px-4 rounded-lg text-sm hover:bg-amber-600 transition">${t('editGameTitle')}</button>
+                            <button data-game-id="${game.id}" class="delete-btn bg-red-600 text-white font-semibold py-2 px-4 rounded-lg text-sm hover:bg-red-700 transition">${t('delete')}</button>
                         </div>
-                    </div>`).join('')
-                : `<p class="text-center text-gray-500 p-6">You haven't created any games yet.</p>`;
+                    </div>`
+                }).join('')
+                : `<p class="text-center text-stone-500 p-6">${t('noGames')}</p>`;
         }
 
         // --- Player: Game Join & Play Logic ---
@@ -842,22 +945,16 @@
             joinGameError.classList.add('hidden');
             const code = gameCodeInput.value.trim().toUpperCase();
             const name = playerNameInput.value.trim();
-            if (!code || !name) { joinGameError.textContent = 'Please enter a game code and a nickname.'; joinGameError.classList.remove('hidden'); return; }
+            if (!code || !name) { joinGameError.textContent = t('enterCodeAndName'); joinGameError.classList.remove('hidden'); return; }
             try {
                 const sessionsPath = `artifacts/${appId}/public/data/sessions`;
                 const q = query(collection(db, sessionsPath), where("joinCode", "==", code));
                 const snap = await getDocs(q);
-                if (snap.empty) { joinGameError.textContent = 'Game not found.'; joinGameError.classList.remove('hidden'); return; }
+                if (snap.empty) { joinGameError.textContent = t('gameNotFound'); joinGameError.classList.remove('hidden'); return; }
                 const sessionDoc = snap.docs[0];
-                if (sessionDoc.data().status !== 'lobby') { joinGameError.textContent = 'Game has already started or ended.'; joinGameError.classList.remove('hidden'); return; }
+                if (sessionDoc.data().status !== 'lobby') { joinGameError.textContent = t('gameNotAvailable'); joinGameError.classList.remove('hidden'); return; }
                 const gameDef = sessionDoc.data().gameDefinition;
                 const card = generatePlayerCard(gameDef);
-                
-                if (gameDef.markingType === 'manual') {
-                    manualMarkHelper.classList.remove('hidden');
-                } else {
-                    manualMarkHelper.classList.add('hidden');
-                }
                 
                 const playersPath = `artifacts/${appId}/public/data/sessions/${sessionDoc.id}/players`;
                 const playerRef = await addDoc(collection(db, playersPath), {
@@ -865,7 +962,7 @@
                 });
                 currentPlayerState = {
                     sessionId: sessionDoc.id, playerId: playerRef.id, playerName: name,
-                    card, markedIndices: new Set(), gameDef,
+                    card, markedIndices: new Set(), gameDef, calledItems: new Set(),
                 };
                  if (gameDef.hasFreeSpace) {
                     const middleIndex = Math.floor((gameDef.gridSize * gameDef.gridSize) / 2);
@@ -874,13 +971,14 @@
                 renderBingoCard(card, gameDef.gridSize);
                 listenForPlayerSessionUpdates();
                 switchView('player-game-view');
-            } catch (error) { console.error("Error joining game: ", error); joinGameError.textContent = "Could not join game."; joinGameError.classList.remove('hidden'); }
+            } catch (error) { console.error("Error joining game: ", error); joinGameError.textContent = t('couldNotJoin'); joinGameError.classList.remove('hidden'); }
         });
         
         bingoBtn.addEventListener('click', async () => {
             const { sessionId, playerName, card, markedIndices, gameDef } = currentPlayerState;
             if (!sessionId) return;
-            bingoBtn.disabled = true; bingoBtn.textContent = "BINGO CALLED!";
+            bingoBtn.disabled = true; 
+            bingoBtn.textContent = "BINGO CALLED!"; // This text is temporary
             const sessionDocPath = `artifacts/${appId}/public/data/sessions/${sessionId}`;
             await updateDoc(doc(db, sessionDocPath), {
                 bingoCall: {
@@ -924,24 +1022,26 @@
         
         playerBingoCard.addEventListener('click', (e) => {
             const cell = e.target.closest('.bingo-cell');
-            if (!cell || (cell.textContent === 'FREE') || cell.classList.contains('marked')) return;
+            if (!cell || (cell.textContent === 'FREE')) return;
+            const { gameDef, card, calledItems } = currentPlayerState;
+            if (gameDef.markingType !== 'manual' || currentView !== 'player-game-view') return;
             
-            const markingType = currentPlayerState.gameDef?.markingType || 'auto';
-            if (markingType !== 'manual' || currentView !== 'player-game-view') return;
+            const index = parseInt(cell.dataset.index);
+            const cardItem = card[index];
+            const callValue = cardItem.call || cardItem;
 
-            const cellIndex = parseInt(cell.dataset.index);
-            const cellItem = currentPlayerState.card[cellIndex];
-            const cellDisplayValue = cellItem.display || cellItem;
-
-            const hasBeenCalled = lastKnownCalledItems.some(calledItem => {
-                const calledDisplayValue = calledItem.display || calledItem;
-                return calledDisplayValue === cellDisplayValue;
-            });
-
-            if (hasBeenCalled) {
-                cell.classList.add('marked');
-                currentPlayerState.markedIndices.add(cellIndex);
+            if (calledItems.has(callValue)) {
+                if(currentPlayerState.markedIndices.has(index)) {
+                     currentPlayerState.markedIndices.delete(index);
+                     cell.classList.remove('marked');
+                } else {
+                    currentPlayerState.markedIndices.add(index);
+                    cell.classList.add('marked');
+                }
                 checkWinCondition();
+            } else {
+                cell.classList.add('bg-red-200');
+                setTimeout(() => cell.classList.remove('bg-red-200'), 300);
             }
         });
 
@@ -952,35 +1052,42 @@
             const sessionDocPath = `artifacts/${appId}/public/data/sessions/${sessionId}`;
             unsubscribeSession = onSnapshot(doc(db, sessionDocPath), (docSnap) => {
                 if (!docSnap.exists()) {
-                    gameEndedMessage.textContent = "The host has ended the game.";
+                    gameEndedMessage.textContent = t('gameEndedByHost');
                     gameEndedModal.classList.remove('hidden');
                     return;
                 }; 
                 const { status, calledItems, gameDefinition, bingoCall } = docSnap.data();
-                lastKnownCalledItems = calledItems; // Keep this updated for manual marking
-                const markingType = gameDefinition.markingType || 'auto';
+                currentPlayerState.gameDef = gameDefinition; // keep gameDef updated
 
                 if (status === 'active' && currentView !== 'player-game-view') {
-                    playerGamePattern.textContent = `Goal: ${PATTERN_NAMES[gameDefinition.winningPattern]}`;
+                    const patternKey = { 'line': 'p_line', 'corners': 'p_corners', 'x-pattern': 'p_x', 'frame': 'p_frame', 'blackout': 'p_blackout' }[gameDefinition.winningPattern];
+                    playerGamePattern.textContent = t(patternKey);
                     switchView('player-game-view');
                 }
                 if (status === 'ended_by_host') {
+                    gameEndedMessage.textContent = t('gameEndedByHost');
                     gameEndedModal.classList.remove('hidden');
                     return;
                 }
                 if (status === 'finished') {
                     bingoBtn.disabled = true;
                     if(bingoCall.playerName === currentPlayerState.playerName) {
-                        bingoBtn.textContent = "YOU WON!";
-                        bingoBtn.classList.replace('bg-green-500', 'bg-yellow-500');
-                    } else { bingoBtn.textContent = `WINNER: ${bingoCall.playerName}`; }
+                        bingoBtn.textContent = t('youWon');
+                        bingoBtn.classList.replace('bg-emerald-600', 'bg-yellow-500');
+                    } else { 
+                        bingoBtn.textContent = t('winnerIsNamed', { winner: bingoCall.playerName }); 
+                    }
+                    gameEndedMessage.textContent = t('gameEndedWinner', { winner: bingoCall.playerName });
+                    gameEndedModal.classList.remove('hidden');
                     return;
                 }
+                
+                const calledValues = new Set(calledItems.map(item => item.call || item));
+                currentPlayerState.calledItems = calledValues;
                 const latestItem = calledItems[calledItems.length - 1];
                 if(latestItem) { playerCalledItem.textContent = latestItem.call || latestItem; }
-
-                if (markingType === 'auto') {
-                    const calledValues = new Set(calledItems.map(item => item.call || item));
+                
+                if (gameDefinition.markingType === 'auto') {
                     let changed = false;
                     currentPlayerState.card.forEach((item, index) => {
                         const itemValue = item.call || item;
@@ -1032,31 +1139,42 @@
 
         // --- Global Auth State & Page Load Logic ---
         onAuthStateChanged(auth, (user) => {
-            const protectedViews = ['host-dashboard-view', 'create-game-view', 'host-lobby-view', 'host-game-view'];
+            const protectedViews = ['host-dashboard-view', 'create-game-view', 'host-lobby-view', 'host-game-view', 'host-settings-view'];
             if (user) {
                 currentUser = user;
-                hostEmailDisplay.textContent = `Logged in as: ${user.email}`;
-                if (currentView === 'host-login-view' || currentView === 'initial-view') { switchView('host-dashboard-view'); }
+                hostEmailDisplay.textContent = t('loggedInAs', { email: user.email });
+                if (currentView === 'host-login-view' || currentView === 'initial-view') { 
+                    switchView('host-dashboard-view'); 
+                }
                 listenForGames(); 
             } else {
                 currentUser = null;
-                if (unsubscribeGames) unsubscribeGames(); if (unsubscribePlayers) unsubscribePlayers(); if (unsubscribeSession) unsubscribeSession();
-                gameListContainer.innerHTML = `<p class="text-center text-gray-500 p-6">You haven't created any games yet.</p>`;
-                if (protectedViews.includes(currentView)) { switchView('initial-view'); }
+                if (unsubscribeGames) unsubscribeGames(); 
+                if (unsubscribePlayers) unsubscribePlayers(); 
+                if (unsubscribeSession) unsubscribeSession();
+                
+                cachedGames = [];
+                renderGames([]);
+
+                if (protectedViews.includes(currentView)) { 
+                    switchView('initial-view'); 
+                }
             }
         });
 
-        // Check for join code in URL on page load
         document.addEventListener('DOMContentLoaded', () => {
-            updateWordHelper();
+            const savedLang = localStorage.getItem('bingoLang') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
+            setLanguage(savedLang);
+
             const urlParams = new URLSearchParams(window.location.search);
             const joinCode = urlParams.get('joinCode');
+            const urlLang = urlParams.get('lang');
             if (joinCode) {
+                if (urlLang) setLanguage(urlLang);
                 gameCodeInput.value = joinCode.toUpperCase();
                 switchView('player-join-view');
             }
         });
-
     </script>
 </body>
 </html>
