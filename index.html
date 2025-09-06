@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bingo Game Host & Player</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display.swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -116,8 +117,9 @@
 
         <!-- ===== Host: Create New Game Form ===== -->
         <div id="create-game-view" class="view">
-            <h2 class="text-3xl font-bold mb-6">Create a Custom Bingo Game</h2>
+            <h2 id="create-edit-title" class="text-3xl font-bold mb-6">Create a Custom Bingo Game</h2>
             <div class="bg-white p-8 rounded-xl shadow-lg">
+                <input type="hidden" id="editing-game-id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                     <div>
                         <label for="game-name" class="block font-semibold mb-1">Game Name</label>
@@ -151,9 +153,18 @@
                         </select>
                     </div>
                 </div>
-                <div class="flex items-center mb-4">
-                   <input type="checkbox" id="free-space-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked>
-                   <label for="free-space-toggle" class="ml-2 block text-sm font-medium text-gray-900">Include "FREE" space</label>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                    <div>
+                        <label for="marking-type-select" class="block font-semibold mb-1">Card Marking Style</label>
+                        <select id="marking-type-select" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                            <option value="auto" selected>Automatic Marking</option>
+                            <option value="manual">Manual Marking (Player taps)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center pt-6"> <!-- Using padding to align with the label above -->
+                        <input type="checkbox" id="free-space-toggle" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked>
+                        <label for="free-space-toggle" class="ml-2 block text-sm font-medium text-gray-900">Include "FREE" space</label>
+                    </div>
                 </div>
                 <div class="mb-4">
                     <label for="game-words" class="block font-semibold mb-1">Bingo Items</label>
@@ -164,20 +175,62 @@
                 <div id="create-game-error" class="text-red-500 text-sm mb-4 text-center hidden"></div>
                 <div class="mt-6 flex gap-4">
                     <button id="save-game-btn" class="flex-1 bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-indigo-700 transition">Save Game</button>
+                    <button id="cancel-edit-btn" onclick="switchView('host-dashboard-view')" class="flex-1 bg-gray-200 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Host: Pre-Game Settings Review ===== -->
+        <div id="host-settings-view" class="view">
+            <h2 class="text-3xl font-bold mb-6">Review Game Settings</h2>
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <input type="hidden" id="settings-game-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                    <div>
+                        <label for="settings-game-name" class="block font-semibold mb-1">Game Name</label>
+                        <input type="text" id="settings-game-name" class="w-full p-3 border border-gray-300 rounded-lg">
+                    </div>
+                     <div>
+                        <label for="settings-winning-pattern" class="block font-semibold mb-1">Winning Pattern</label>
+                        <select id="settings-winning-pattern" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                            <option value="line">Any Single Line</option>
+                            <option value="corners">Four Corners</option>
+                            <option value="x-pattern">X Pattern</option>
+                            <option value="frame">Outside Frame</option>
+                            <option value="blackout">Blackout / Coverall</option>
+                        </select>
+                    </div>
+                </div>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                    <div>
+                        <label for="settings-marking-type" class="block font-semibold mb-1">Card Marking Style</label>
+                        <select id="settings-marking-type" class="w-full p-3 border border-gray-300 rounded-lg bg-white">
+                            <option value="auto" selected>Automatic Marking</option>
+                            <option value="manual">Manual Marking (Player taps)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <!-- This is a placeholder for alignment, could be other settings -->
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500 mb-6">Note: Changing these settings will only affect this game session, not the saved version.</p>
+                <div class="mt-6 flex gap-4">
+                    <button id="proceed-to-lobby-btn" class="flex-1 bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-indigo-700 transition">Proceed to Lobby</button>
                     <button onclick="switchView('host-dashboard-view')" class="flex-1 bg-gray-200 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-300 transition">Cancel</button>
                 </div>
             </div>
         </div>
+
 
         <!-- ===== Host: Game Lobby ===== -->
         <div id="host-lobby-view" class="view text-center">
             <h2 class="text-3xl font-bold mb-4" id="lobby-game-name">Game Lobby</h2>
             <div class="bg-white p-8 rounded-xl shadow-lg">
                 <p class="text-gray-600 mb-2">Share this code with your players:</p>
-                <p id="lobby-join-code" class="text-5xl font-extrabold bg-gray-100 p-4 rounded-lg tracking-widest mb-6">...LOADING...</p>
+                <p id="lobby-join-code" class="text-5xl font-extrabold bg-gray-100 p-4 rounded-lg tracking-widest mb-4">...LOADING...</p>
+                <div id="lobby-qrcode-container" class="mb-6 flex flex-col items-center"></div>
                 <h3 class="text-xl font-semibold mb-4">Players Joined:</h3>
                 <div id="player-list" class="text-left max-h-40 overflow-y-auto border rounded-lg p-2">
-                    <!-- Player names will appear here as they join -->
                     <p class="text-center text-gray-500">(Players will appear here as they join)</p>
                 </div>
                 <button id="start-game-btn" class="mt-8 w-full bg-green-500 text-white font-bold py-4 text-xl rounded-lg shadow-lg hover:bg-green-600 transition">Start Game!</button>
@@ -206,7 +259,7 @@
                      </div>
                 </div>
             </div>
-            <button onclick="switchView('host-dashboard-view')" class="mt-6 text-sm text-indigo-600 hover:underline">End Game & Go to Dashboard</button>
+            <button id="end-game-btn" class="mt-6 w-full md:w-auto bg-red-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-red-600 transition">End Game for All Players</button>
         </div>
 
 
@@ -244,6 +297,7 @@
                 <div id="player-bingo-card" class="bingo-card p-2 bg-gray-100 rounded-lg">
                     <!-- BINGO card cells will be generated by JS -->
                 </div>
+                <p id="manual-mark-helper" class="text-center text-sm text-indigo-600 mt-4 hidden">Tap the squares on your card as they are called!</p>
                 <button id="bingo-btn" class="mt-6 w-full bg-green-500 text-white font-bold py-4 text-2xl rounded-lg shadow-lg hover:bg-green-600 transition disabled:bg-gray-400" disabled>BINGO!</button>
              </div>
         </div>
@@ -255,13 +309,20 @@
         <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md m-4">
             <h2 class="text-2xl font-bold text-center mb-2">Bingo Call!</h2>
             <p id="verification-player-name" class="text-center text-lg font-semibold text-indigo-600 mb-4"></p>
-            <div id="verification-bingo-card" class="bingo-card p-2 bg-gray-100 rounded-lg">
-                <!-- Verification card will be rendered here -->
-            </div>
+            <div id="verification-bingo-card" class="bingo-card p-2 bg-gray-100 rounded-lg"></div>
             <div class="mt-6 flex gap-4">
                 <button id="deny-win-btn" class="flex-1 bg-gray-200 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-300 transition">Invalid Win</button>
                 <button id="confirm-win-btn" class="flex-1 bg-green-500 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-green-600 transition">Confirm Winner</button>
             </div>
+        </div>
+    </div>
+    
+    <!-- ===== Player: Game Ended Modal ===== -->
+    <div id="game-ended-modal" class="modal-overlay hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm m-4 text-center">
+             <h2 class="text-2xl font-bold text-center mb-4">Game Over</h2>
+             <p id="game-ended-message" class="text-gray-600 mb-6">The host has ended the game. Thanks for playing!</p>
+             <button onclick="window.location.reload()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-indigo-700 transition">Back to Home</button>
         </div>
     </div>
 
@@ -311,39 +372,26 @@
         let currentUser = null;
         let currentSessionId = null; // for host
         let currentPlayerState = { // for player
-            sessionId: null,
-            playerId: null,
-            playerName: null,
-            card: [],
-            markedIndices: new Set(),
-            gameDef: null,
+            sessionId: null, playerId: null, playerName: null,
+            card: [], markedIndices: new Set(), gameDef: null,
         };
         let unsubscribeGames = null;
         let unsubscribePlayers = null; 
         let unsubscribeSession = null;
+        let lastKnownCalledItems = [];
 
         // --- Basic View Switching Logic ---
         let currentView = 'initial-view';
-
         function switchView(viewId) {
-            const currentElement = document.getElementById(currentView);
-            if (currentElement) {
-                currentElement.classList.remove('active-view');
-            }
-            const nextElement = document.getElementById(viewId);
-            if (nextElement) {
-                nextElement.classList.add('active-view');
-                currentView = viewId;
-            }
+            document.getElementById(currentView)?.classList.remove('active-view');
+            document.getElementById(viewId)?.classList.add('active-view');
+            currentView = viewId;
         }
         window.switchView = switchView; // Make globally accessible
 
         const PATTERN_NAMES = {
-            'line': 'Any Single Line',
-            'corners': 'Four Corners',
-            'x-pattern': 'X Pattern',
-            'frame': 'Outside Frame',
-            'blackout': 'Blackout'
+            'line': 'Any Single Line', 'corners': 'Four Corners', 'x-pattern': 'X Pattern',
+            'frame': 'Outside Frame', 'blackout': 'Blackout'
         };
 
         // --- UI Element References ---
@@ -352,6 +400,8 @@
         const verificationBingoCard = document.getElementById('verification-bingo-card');
         const confirmWinBtn = document.getElementById('confirm-win-btn');
         const denyWinBtn = document.getElementById('deny-win-btn');
+        const gameEndedModal = document.getElementById('game-ended-modal');
+        const gameEndedMessage = document.getElementById('game-ended-message');
         const authError = document.getElementById('auth-error');
         const emailInput = document.getElementById('host-email');
         const passwordInput = document.getElementById('host-password');
@@ -359,7 +409,7 @@
         const signupBtn = document.getElementById('signup-btn');
         const logoutBtn = document.getElementById('logout-btn');
         const hostEmailDisplay = document.getElementById('host-email-display');
-        
+        const lobbyQrcodeContainer = document.getElementById('lobby-qrcode-container');
         const gameNameInput = document.getElementById('game-name');
         const gameWordsTextarea = document.getElementById('game-words');
         const freeSpaceToggle = document.getElementById('free-space-toggle');
@@ -373,14 +423,14 @@
         const wordCountHelper = document.getElementById('word-count-helper');
         const listTypeSelect = document.getElementById('list-type-select');
         const winningPatternSelect = document.getElementById('winning-pattern-select');
-
+        const markingTypeSelect = document.getElementById('marking-type-select');
+        const manualMarkHelper = document.getElementById('manual-mark-helper');
         const joinGameBtn = document.getElementById('join-game-btn');
         const gameCodeInput = document.getElementById('game-code');
         const playerNameInput = document.getElementById('player-name');
         const joinGameError = document.getElementById('join-game-error');
         const playerBingoCard = document.getElementById('player-bingo-card');
         const bingoBtn = document.getElementById('bingo-btn');
-
         const startGameBtn = document.getElementById('start-game-btn');
         const callNextBtn = document.getElementById('call-next-btn');
         const calledItemDisplay = document.getElementById('called-item-display');
@@ -389,46 +439,57 @@
         const hostGamePattern = document.getElementById('host-game-pattern');
         const playerCalledItem = document.getElementById('player-called-item');
         const playerGamePattern = document.getElementById('player-game-pattern');
+        const endGameBtn = document.getElementById('end-game-btn');
+        const createEditTitle = document.getElementById('create-edit-title');
+        const editingGameIdInput = document.getElementById('editing-game-id');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        
+        // Settings View UI
+        const settingsGameIdInput = document.getElementById('settings-game-id');
+        const settingsGameNameInput = document.getElementById('settings-game-name');
+        const settingsWinningPatternSelect = document.getElementById('settings-winning-pattern');
+        const settingsMarkingTypeSelect = document.getElementById('settings-marking-type');
+        const proceedToLobbyBtn = document.getElementById('proceed-to-lobby-btn');
 
         // --- Event Listeners & UI Updaters ---
+        function resetHostGameView() {
+            calledItemDisplay.innerHTML = "..."; // Use innerHTML to clear potential winner span
+            callNextBtn.disabled = false;
+            endGameBtn.textContent = "End Game for All Players";
+            callHistory.innerHTML = "(Called items will appear here)";
+            hostGameName.textContent = "Live Game";
+            hostGamePattern.textContent = "";
+        }
+
         function updateWordHelper() {
             const size = parseInt(gridSizeSelect.value);
             const hasFreeSpace = freeSpaceToggle.checked;
             const requiredWords = hasFreeSpace ? (size * size) - 1 : (size * size);
             const listType = listTypeSelect.value;
-
             if(listType === 'simple') {
-                gameWordsTextarea.placeholder = "Enter one word or phrase per line...\nTeamwork\nSynergy\nQ4 Goals";
+                gameWordsTextarea.placeholder = `Enter one word or phrase per line...\nTeamwork\nSynergy\nQ4 Goals`;
                 wordCountHelper.textContent = `You need at least ${requiredWords} items for a ${size}x${size} grid.`;
             } else { // paired
-                gameWordsTextarea.placeholder = "Format: Item To Call:Item on Card; ...\nExample: What is 2+2?:4; Capital of France:Paris;";
-                wordCountHelper.textContent = `You need at least ${requiredWords} pairs (separated by semicolons) for a ${size}x${size} grid.`;
+                gameWordsTextarea.placeholder = `Format: Item To Call:Item on Card (one per line)\nExample:\nWhat is 2+2?:4\nCapital of France:Paris`;
+                wordCountHelper.textContent = `You need at least ${requiredWords} pairs (one per line) for a ${size}x${size} grid.`;
             }
         }
         gridSizeSelect.addEventListener('change', updateWordHelper);
         freeSpaceToggle.addEventListener('change', updateWordHelper);
         listTypeSelect.addEventListener('change', updateWordHelper);
-        document.addEventListener('DOMContentLoaded', updateWordHelper);
-
-
+        
         // --- Auth Logic ---
         signupBtn.addEventListener('click', async () => {
             try {
                 authError.classList.add('hidden');
                 await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-            } catch (error) {
-                authError.textContent = error.message;
-                authError.classList.remove('hidden');
-            }
+            } catch (error) { authError.textContent = error.message; authError.classList.remove('hidden'); }
         });
         loginBtn.addEventListener('click', async () => {
             try {
                 authError.classList.add('hidden');
                 await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-            } catch (error) {
-                authError.textContent = error.message;
-                authError.classList.remove('hidden');
-            }
+            } catch (error) { authError.textContent = error.message; authError.classList.remove('hidden'); }
         });
         logoutBtn.addEventListener('click', async () => await signOut(auth));
         
@@ -442,19 +503,16 @@
             const hasFreeSpace = freeSpaceToggle.checked;
             const gridSize = parseInt(gridSizeSelect.value);
             const winningPattern = winningPatternSelect.value;
+            const markingType = markingTypeSelect.value;
             const requiredWords = hasFreeSpace ? (gridSize * gridSize) - 1 : (gridSize * gridSize);
             let words = [];
             
-            if (!gameName) {
-                createGameError.textContent = 'Please enter a name for your game.';
-                createGameError.classList.remove('hidden'); return;
-            }
-
+            if (!gameName) { createGameError.textContent = 'Please enter a name for your game.'; createGameError.classList.remove('hidden'); return; }
             try {
                 if (listType === 'simple') {
                     words = rawWords.split('\n').map(w => w.trim()).filter(Boolean);
                 } else {
-                    words = rawWords.split(';').map(pair => {
+                    words = rawWords.split('\n').map(pair => {
                         if (!pair.trim()) return null;
                         const parts = pair.split(':');
                         if (parts.length !== 2) throw new Error(`Invalid pair: "${pair}"`);
@@ -463,31 +521,35 @@
                         return { call, display };
                     }).filter(Boolean);
                 }
-            } catch (error) {
-                createGameError.textContent = `Parsing Error: ${error.message}.`;
-                createGameError.classList.remove('hidden'); return;
-            }
-            
+            } catch (error) { createGameError.textContent = `Parsing Error: ${error.message}.`; createGameError.classList.remove('hidden'); return; }
             if (words.length < requiredWords) {
                 const itemType = listType === 'simple' ? 'items' : 'pairs';
                 createGameError.textContent = `Need at least ${requiredWords} ${itemType} (you have ${words.length}).`;
                 createGameError.classList.remove('hidden'); return;
             }
 
+            const gameData = {
+                name: gameName, listType, words, hasFreeSpace, gridSize, winningPattern, markingType,
+            };
+
             try {
-                const gamesCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/games`;
-                await addDoc(collection(db, gamesCollectionPath), {
-                    name: gameName, listType, words, hasFreeSpace, gridSize, winningPattern,
-                    createdAt: serverTimestamp()
-                });
-                gameNameInput.value = '';
-                gameWordsTextarea.value = '';
+                const editingId = editingGameIdInput.value;
+                if (editingId) {
+                    // Update existing game
+                    const gameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${editingId}`;
+                    await updateDoc(doc(db, gameDocPath), gameData);
+                } else {
+                    // Create new game
+                    const gamesCollectionPath = `artifacts/${appId}/users/${currentUser.uid}/games`;
+                    await addDoc(collection(db, gamesCollectionPath), {
+                        ...gameData,
+                        createdAt: serverTimestamp()
+                    });
+                }
+                
+                resetCreateGameForm();
                 switchView('host-dashboard-view');
-            } catch (e) {
-                console.error("Error saving game: ", e);
-                createGameError.textContent = "Could not save game.";
-                createGameError.classList.remove('hidden');
-            }
+            } catch (e) { console.error("Error saving game: ", e); createGameError.textContent = "Could not save game."; createGameError.classList.remove('hidden'); }
         });
 
         gameListContainer.addEventListener('click', (e) => {
@@ -497,16 +559,71 @@
             const gameId = target.dataset.gameId;
             if (target.classList.contains('host-btn')) startHostingGame(gameId);
             if (target.classList.contains('delete-btn')) deleteGame(gameId);
+            if (target.classList.contains('edit-btn')) editGame(gameId);
         });
         
+        async function editGame(gameId) {
+            if (!currentUser) return;
+            try {
+                const gameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${gameId}`;
+                const gameDocSnap = await getDoc(doc(db, gameDocPath));
+                if (!gameDocSnap.exists()) return console.error("Game to edit not found!");
+                const game = gameDocSnap.data();
+                
+                // Populate the form
+                createEditTitle.textContent = "Edit Game";
+                editingGameIdInput.value = gameId;
+                gameNameInput.value = game.name;
+                winningPatternSelect.value = game.winningPattern;
+                listTypeSelect.value = game.listType;
+                gridSizeSelect.value = game.gridSize;
+                markingTypeSelect.value = game.markingType;
+                freeSpaceToggle.checked = game.hasFreeSpace;
+
+                let wordsText = "";
+                if(game.listType === 'simple') {
+                    wordsText = game.words.join('\n');
+                } else {
+                    wordsText = game.words.map(p => `${p.call}:${p.display}`).join('\n');
+                }
+                gameWordsTextarea.value = wordsText;
+                
+                saveGameBtn.textContent = "Update Game";
+                updateWordHelper();
+                switchView('create-game-view');
+
+            } catch (error) {
+                console.error("Error loading game for editing: ", error);
+            }
+        }
+
+        function resetCreateGameForm() {
+            createEditTitle.textContent = "Create a Custom Bingo Game";
+            editingGameIdInput.value = "";
+            gameNameInput.value = "";
+            gameWordsTextarea.value = "";
+            saveGameBtn.textContent = "Save Game";
+            // Optionally reset selects to default
+            winningPatternSelect.value = 'line';
+            listTypeSelect.value = 'simple';
+            gridSizeSelect.value = '5';
+            markingTypeSelect.value = 'auto';
+            freeSpaceToggle.checked = true;
+            updateWordHelper();
+        }
+        
+        // Add reset call to the "+ New Game" button click
+        document.querySelector('button[onclick="switchView(\'create-game-view\')"]').addEventListener('click', resetCreateGameForm);
+        cancelEditBtn.addEventListener('click', resetCreateGameForm);
+
+
         async function deleteGame(gameId) {
-            if (!currentUser || !confirm("Permanently delete this game?")) return;
+            // Re-adding confirm here as it's a destructive action, can be replaced with a modal
+            if (!currentUser || !confirm("Permanently delete this game? This cannot be undone.")) return;
             try {
                 const gameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${gameId}`;
                 await deleteDoc(doc(db, gameDocPath));
-            } catch (error) {
-                console.error("Error deleting game: ", error);
-            }
+            } catch (error) { console.error("Error deleting game: ", error); }
         }
 
         async function startHostingGame(gameId) {
@@ -517,29 +634,77 @@
                 if (!gameDocSnap.exists()) return console.error("Game not found!");
                 const gameData = gameDocSnap.data();
 
-                const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                // Populate and switch to the settings review view
+                settingsGameIdInput.value = gameId;
+                settingsGameNameInput.value = gameData.name;
+                settingsWinningPatternSelect.value = gameData.winningPattern;
+                settingsMarkingTypeSelect.value = gameData.markingType;
                 
-                const sessionsCollectionPath = `artifacts/${appId}/public/data/sessions`;
-                const sessionRef = await addDoc(collection(db, sessionsCollectionPath), {
-                    gameId, hostId: currentUser.uid, gameDefinition: gameData, joinCode,
-                    status: 'lobby', createdAt: serverTimestamp(), calledItems: [], bingoCall: null
-                });
-                
-                currentSessionId = sessionRef.id;
-                lobbyGameName.textContent = gameData.name;
-                lobbyJoinCode.textContent = joinCode;
-                listenForPlayers(currentSessionId);
-                listenForHostSessionUpdates(); // FIX is here
-                switchView('host-lobby-view');
+                switchView('host-settings-view');
             } catch(error) {
-                console.error("Error starting session: ", error);
+                console.error("Error preparing game settings: ", error);
             }
         }
+        
+        proceedToLobbyBtn.addEventListener('click', async () => {
+            if(!currentUser) return;
+
+            const gameId = settingsGameIdInput.value;
+            const originalGameDocPath = `artifacts/${appId}/users/${currentUser.uid}/games/${gameId}`;
+            const gameDocSnap = await getDoc(doc(db, originalGameDocPath));
+            if (!gameDocSnap.exists()) return console.error("Original game not found!");
+            
+            // Create a temporary game definition with the overrides
+            const gameDataForSession = {
+                ...gameDocSnap.data(), // Start with original data
+                name: settingsGameNameInput.value, // Override with new settings
+                winningPattern: settingsWinningPatternSelect.value,
+                markingType: settingsMarkingTypeSelect.value,
+            };
+
+            resetHostGameView(); // FIX: Reset the host's game screen UI from any previous game
+
+            const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            
+            const sessionsCollectionPath = `artifacts/${appId}/public/data/sessions`;
+            const sessionRef = await addDoc(collection(db, sessionsCollectionPath), {
+                gameId, 
+                hostId: currentUser.uid, 
+                gameDefinition: gameDataForSession, // Use the modified game data
+                joinCode,
+                status: 'lobby', 
+                createdAt: serverTimestamp(), 
+                calledItems: [], 
+                bingoCall: null
+            });
+            
+            currentSessionId = sessionRef.id;
+            lobbyGameName.textContent = gameDataForSession.name;
+            lobbyJoinCode.textContent = joinCode;
+
+            const joinUrl = `${window.location.origin}${window.location.pathname}?joinCode=${joinCode}`;
+            const qr = qrcode(0, 'L');
+            qr.addData(joinUrl);
+            qr.make();
+            lobbyQrcodeContainer.innerHTML = qr.createImgTag(4, 8);
+            lobbyQrcodeContainer.firstChild.classList.add('mx-auto', 'rounded-lg', 'shadow-md');
+
+            listenForPlayers(currentSessionId);
+            listenForHostSessionUpdates();
+            switchView('host-lobby-view');
+        });
 
         startGameBtn.addEventListener('click', async () => {
             if (!currentSessionId) return;
             const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
             await updateDoc(doc(db, sessionDocPath), { status: 'active' });
+        });
+
+        endGameBtn.addEventListener('click', async () => {
+            if (!currentSessionId) return;
+            const sessionDocPath = `artifacts/${appId}/public/data/sessions/${currentSessionId}`;
+            await updateDoc(doc(db, sessionDocPath), { status: 'ended_by_host' });
+            switchView('host-dashboard-view');
         });
 
         callNextBtn.addEventListener('click', async () => {
@@ -562,9 +727,7 @@
             }
 
             const nextItem = availableItems[Math.floor(Math.random() * availableItems.length)];
-            await updateDoc(doc(db, sessionDocPath), {
-                calledItems: [...calledItems, nextItem]
-            });
+            await updateDoc(doc(db, sessionDocPath), { calledItems: [...calledItems, nextItem] });
         });
 
         confirmWinBtn.addEventListener('click', async () => {
@@ -581,7 +744,6 @@
             verificationModal.classList.add('hidden');
         });
 
-
         function listenForHostSessionUpdates() {
             if (unsubscribeSession) unsubscribeSession();
             if (!currentSessionId) return;
@@ -595,19 +757,16 @@
                     hostGamePattern.textContent = `Goal: ${PATTERN_NAMES[data.gameDefinition.winningPattern]}`;
                     switchView('host-game-view');
                 }
-                
                 if (data.status === 'finished') {
                     calledItemDisplay.innerHTML = `Winner: <span class="text-green-500">${data.bingoCall.playerName}</span>`;
                     callNextBtn.disabled = true;
+                    endGameBtn.textContent = "Back to Dashboard";
                 }
-
                 const latestItem = data.calledItems[data.calledItems.length - 1];
                 if(latestItem && data.status !== 'finished') {
                     calledItemDisplay.textContent = latestItem.call || latestItem;
                 }
                 callHistory.innerHTML = data.calledItems.map(item => `<div>${item.call || item}</div>`).reverse().join('');
-
-                // Check for bingo call
                 if (data.bingoCall) {
                     renderVerificationCard(data.bingoCall);
                     verificationModal.classList.remove('hidden');
@@ -623,25 +782,17 @@
             verificationPlayerName.textContent = playerName;
             verificationBingoCard.innerHTML = '';
             verificationBingoCard.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-
             card.forEach((word, index) => {
                 const cell = document.createElement('div');
                 cell.classList.add('bingo-cell', 'bg-white', 'shadow-sm', 'text-xs');
                 const displayWord = word.display || word;
-
                 if (displayWord === "FREE") {
-                    cell.textContent = "FREE";
-                    cell.classList.add('free-space');
-                } else {
-                    cell.textContent = displayWord;
-                }
-                if (markedIndices.includes(index)) {
-                     cell.classList.add('marked');
-                }
+                    cell.textContent = "FREE"; cell.classList.add('free-space');
+                } else { cell.textContent = displayWord; }
+                if (markedIndices.includes(index)) { cell.classList.add('marked'); }
                 verificationBingoCard.appendChild(cell);
             });
         }
-
 
         function listenForGames() {
             if (unsubscribeGames) unsubscribeGames(); 
@@ -675,10 +826,11 @@
                     <div class="flex items-center justify-between p-4 border-b last:border-b-0">
                         <div>
                             <h3 class="font-bold text-lg">${game.name}</h3>
-                            <p class="text-sm text-gray-500">${game.gridSize || 5}x${game.gridSize || 5} • ${PATTERN_NAMES[game.winningPattern] || 'Single Line'}</p>
+                            <p class="text-sm text-gray-500">${game.gridSize || 5}x${game.gridSize || 5} • ${PATTERN_NAMES[game.winningPattern] || 'Single Line'} • <span class="capitalize">${game.markingType || 'auto'}</span> Mark</p>
                         </div>
                         <div class="flex gap-2">
                             <button data-game-id="${game.id}" class="host-btn bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg text-sm hover:bg-blue-600 transition">Host</button>
+                            <button data-game-id="${game.id}" class="edit-btn bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg text-sm hover:bg-yellow-600 transition">Edit</button>
                             <button data-game-id="${game.id}" class="delete-btn bg-red-500 text-white font-semibold py-2 px-4 rounded-lg text-sm hover:bg-red-600 transition">Delete</button>
                         </div>
                     </div>`).join('')
@@ -690,74 +842,50 @@
             joinGameError.classList.add('hidden');
             const code = gameCodeInput.value.trim().toUpperCase();
             const name = playerNameInput.value.trim();
-
-            if (!code || !name) {
-                joinGameError.textContent = 'Please enter a game code and a nickname.';
-                joinGameError.classList.remove('hidden'); return;
-            }
-
+            if (!code || !name) { joinGameError.textContent = 'Please enter a game code and a nickname.'; joinGameError.classList.remove('hidden'); return; }
             try {
                 const sessionsPath = `artifacts/${appId}/public/data/sessions`;
                 const q = query(collection(db, sessionsPath), where("joinCode", "==", code));
                 const snap = await getDocs(q);
-
-                if (snap.empty) {
-                    joinGameError.textContent = 'Game not found.';
-                    joinGameError.classList.remove('hidden'); return;
-                }
-                
+                if (snap.empty) { joinGameError.textContent = 'Game not found.'; joinGameError.classList.remove('hidden'); return; }
                 const sessionDoc = snap.docs[0];
-                if (sessionDoc.data().status !== 'lobby') {
-                    joinGameError.textContent = 'Game has already started.';
-                    joinGameError.classList.remove('hidden'); return;
-                }
-
+                if (sessionDoc.data().status !== 'lobby') { joinGameError.textContent = 'Game has already started or ended.'; joinGameError.classList.remove('hidden'); return; }
                 const gameDef = sessionDoc.data().gameDefinition;
                 const card = generatePlayerCard(gameDef);
+                
+                if (gameDef.markingType === 'manual') {
+                    manualMarkHelper.classList.remove('hidden');
+                } else {
+                    manualMarkHelper.classList.add('hidden');
+                }
                 
                 const playersPath = `artifacts/${appId}/public/data/sessions/${sessionDoc.id}/players`;
                 const playerRef = await addDoc(collection(db, playersPath), {
                     name, card, joinedAt: serverTimestamp()
                 });
-
                 currentPlayerState = {
-                    sessionId: sessionDoc.id,
-                    playerId: playerRef.id,
-                    playerName: name,
-                    card,
-                    markedIndices: new Set(),
-                    gameDef,
+                    sessionId: sessionDoc.id, playerId: playerRef.id, playerName: name,
+                    card, markedIndices: new Set(), gameDef,
                 };
                  if (gameDef.hasFreeSpace) {
                     const middleIndex = Math.floor((gameDef.gridSize * gameDef.gridSize) / 2);
                     currentPlayerState.markedIndices.add(middleIndex);
                 }
-                
                 renderBingoCard(card, gameDef.gridSize);
                 listenForPlayerSessionUpdates();
                 switchView('player-game-view');
-
-            } catch (error) {
-                console.error("Error joining game: ", error);
-                joinGameError.textContent = "Could not join game.";
-                joinGameError.classList.remove('hidden');
-            }
+            } catch (error) { console.error("Error joining game: ", error); joinGameError.textContent = "Could not join game."; joinGameError.classList.remove('hidden'); }
         });
         
         bingoBtn.addEventListener('click', async () => {
             const { sessionId, playerName, card, markedIndices, gameDef } = currentPlayerState;
             if (!sessionId) return;
-            
-            bingoBtn.disabled = true; // Prevent spamming
-            bingoBtn.textContent = "BINGO CALLED!";
-
+            bingoBtn.disabled = true; bingoBtn.textContent = "BINGO CALLED!";
             const sessionDocPath = `artifacts/${appId}/public/data/sessions/${sessionId}`;
             await updateDoc(doc(db, sessionDocPath), {
                 bingoCall: {
-                    playerName,
-                    card,
-                    markedIndices: Array.from(markedIndices), // Convert Set to Array for Firestore
-                    gameDef
+                    playerName, card,
+                    markedIndices: Array.from(markedIndices), gameDef
                 }
             });
         });
@@ -765,8 +893,8 @@
         function generatePlayerCard(gameDef) {
             const { words, gridSize, hasFreeSpace } = gameDef;
             const cardSize = gridSize * gridSize;
-            const items = [...words]; // Create a mutable copy
-            for (let i = items.length - 1; i > 0; i--) { // Shuffle
+            const items = [...words];
+            for (let i = items.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [items[i], items[j]] = [items[j], items[i]];
             }
@@ -781,44 +909,40 @@
         function renderBingoCard(cardWords, size) {
             playerBingoCard.innerHTML = '';
             playerBingoCard.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-            
             cardWords.forEach((word, index) => {
                 const cell = document.createElement('div');
                 cell.classList.add('bingo-cell', 'bg-white', 'shadow-sm', 'text-xs', 'md:text-sm');
                 cell.dataset.index = index;
                 const displayWord = word.display || word;
-
                 if (displayWord === "FREE") {
-                    cell.textContent = "FREE";
-                    cell.classList.add('free-space');
-                } else {
-                    cell.textContent = displayWord;
-                }
-                if (currentPlayerState.markedIndices.has(index)) {
-                     cell.classList.add('marked');
-                }
+                    cell.textContent = "FREE"; cell.classList.add('free-space');
+                } else { cell.textContent = displayWord; }
+                if (currentPlayerState.markedIndices.has(index)) { cell.classList.add('marked'); }
                 playerBingoCard.appendChild(cell);
             });
         }
         
         playerBingoCard.addEventListener('click', (e) => {
             const cell = e.target.closest('.bingo-cell');
-            if (!cell || (cell.textContent === 'FREE')) return;
-            // Only allow marking/unmarking if the game is active
-            if (currentView !== 'player-game-view') return;
+            if (!cell || (cell.textContent === 'FREE') || cell.classList.contains('marked')) return;
             
-            const index = parseInt(cell.dataset.index);
-            if (currentPlayerState.markedIndices.has(index)) {
-                // Optional: decide if players can un-mark squares. For now, we allow it.
-                // currentPlayerState.markedIndices.delete(index);
-                // cell.classList.remove('marked');
-            } else {
-                // This manual marking is less important now with auto-marking, but can be kept
-                // currentPlayerState.markedIndices.add(index);
-                // cell.classList.add('marked');
+            const markingType = currentPlayerState.gameDef?.markingType || 'auto';
+            if (markingType !== 'manual' || currentView !== 'player-game-view') return;
+
+            const cellIndex = parseInt(cell.dataset.index);
+            const cellItem = currentPlayerState.card[cellIndex];
+            const cellDisplayValue = cellItem.display || cellItem;
+
+            const hasBeenCalled = lastKnownCalledItems.some(calledItem => {
+                const calledDisplayValue = calledItem.display || calledItem;
+                return calledDisplayValue === cellDisplayValue;
+            });
+
+            if (hasBeenCalled) {
+                cell.classList.add('marked');
+                currentPlayerState.markedIndices.add(cellIndex);
+                checkWinCondition();
             }
-            // Win condition is checked automatically on data updates, so manual check is less critical
-            // checkWinCondition();
         });
 
         function listenForPlayerSessionUpdates() {
@@ -826,72 +950,64 @@
             const { sessionId } = currentPlayerState;
             if (!sessionId) return;
             const sessionDocPath = `artifacts/${appId}/public/data/sessions/${sessionId}`;
-
             unsubscribeSession = onSnapshot(doc(db, sessionDocPath), (docSnap) => {
-                if (!docSnap.exists()) { // Game ended by host deleting session
-                    alert("The game has ended.");
-                    switchView('initial-view');
+                if (!docSnap.exists()) {
+                    gameEndedMessage.textContent = "The host has ended the game.";
+                    gameEndedModal.classList.remove('hidden');
                     return;
                 }; 
                 const { status, calledItems, gameDefinition, bingoCall } = docSnap.data();
+                lastKnownCalledItems = calledItems; // Keep this updated for manual marking
+                const markingType = gameDefinition.markingType || 'auto';
 
                 if (status === 'active' && currentView !== 'player-game-view') {
                     playerGamePattern.textContent = `Goal: ${PATTERN_NAMES[gameDefinition.winningPattern]}`;
                     switchView('player-game-view');
                 }
-                 if (status === 'finished') {
+                if (status === 'ended_by_host') {
+                    gameEndedModal.classList.remove('hidden');
+                    return;
+                }
+                if (status === 'finished') {
                     bingoBtn.disabled = true;
                     if(bingoCall.playerName === currentPlayerState.playerName) {
                         bingoBtn.textContent = "YOU WON!";
                         bingoBtn.classList.replace('bg-green-500', 'bg-yellow-500');
-                    } else {
-                        bingoBtn.textContent = `WINNER: ${bingoCall.playerName}`;
-                    }
-                    return; // Stop further processing
+                    } else { bingoBtn.textContent = `WINNER: ${bingoCall.playerName}`; }
+                    return;
                 }
-
-
                 const latestItem = calledItems[calledItems.length - 1];
-                if(latestItem) {
-                    playerCalledItem.textContent = latestItem.call || latestItem;
+                if(latestItem) { playerCalledItem.textContent = latestItem.call || latestItem; }
+
+                if (markingType === 'auto') {
+                    const calledValues = new Set(calledItems.map(item => item.call || item));
+                    let changed = false;
+                    currentPlayerState.card.forEach((item, index) => {
+                        const itemValue = item.call || item;
+                        if (calledValues.has(itemValue) && !currentPlayerState.markedIndices.has(index)) {
+                            currentPlayerState.markedIndices.add(index);
+                            const cell = playerBingoCard.querySelector(`[data-index='${index}']`);
+                            if(cell) cell.classList.add('marked');
+                            changed = true;
+                        }
+                    });
+                    if(changed) checkWinCondition();
                 }
-
-                // Auto-mark card
-                const calledValues = new Set(calledItems.map(item => item.call || item));
-                let changed = false;
-                currentPlayerState.card.forEach((item, index) => {
-                    const itemValue = item.call || item;
-                    if (calledValues.has(itemValue) && !currentPlayerState.markedIndices.has(index)) {
-                        currentPlayerState.markedIndices.add(index);
-                        const cell = playerBingoCard.querySelector(`[data-index='${index}']`);
-                        if(cell) cell.classList.add('marked');
-                        changed = true;
-                    }
-                });
-
-                if(changed) checkWinCondition();
             });
         }
         
         function checkWinCondition() {
             const { gameDef, markedIndices } = currentPlayerState;
             const { winningPattern, gridSize } = gameDef;
-            const size = gridSize;
-            let hasWon = false;
-            
+            const size = gridSize; let hasWon = false;
             const isMarked = (idx) => markedIndices.has(idx);
-
             if (winningPattern === 'line') {
                 const diags = [[], []];
                 for (let i = 0; i < size; i++) {
                     const row = [], col = [];
-                    for(let j = 0; j < size; j++) {
-                        row.push(i * size + j);
-                        col.push(j * size + i);
-                    }
+                    for(let j = 0; j < size; j++) { row.push(i * size + j); col.push(j * size + i); }
                     if(row.every(isMarked) || col.every(isMarked)) hasWon = true;
-                    diags[0].push(i * size + i);
-                    diags[1].push(i * size + (size - 1 - i));
+                    diags[0].push(i * size + i); diags[1].push(i * size + (size - 1 - i));
                 }
                 if(diags[0].every(isMarked) || diags[1].every(isMarked)) hasWon = true;
             } else if (winningPattern === 'corners') {
@@ -899,51 +1015,51 @@
                 if (corners.every(isMarked)) hasWon = true;
             } else if (winningPattern === 'x-pattern') {
                 const diag1 = [], diag2 = [];
-                 for (let i = 0; i < size; i++) {
-                    diag1.push(i * size + i);
-                    diag2.push(i * size + (size - 1 - i));
-                }
+                 for (let i = 0; i < size; i++) { diag1.push(i * size + i); diag2.push(i * size + (size - 1 - i)); }
                 if(diag1.every(isMarked) && diag2.every(isMarked)) hasWon = true;
             } else if (winningPattern === 'frame') {
                 const frame = [];
                 for(let i=0; i < size*size; i++) {
-                    const row = Math.floor(i / size);
-                    const col = i % size;
-                    if(row === 0 || row === size-1 || col === 0 || col === size-1) {
-                        frame.push(i);
-                    }
+                    const row = Math.floor(i / size); const col = i % size;
+                    if(row === 0 || row === size-1 || col === 0 || col === size-1) { frame.push(i); }
                 }
                 if(frame.every(isMarked)) hasWon = true;
             } else if (winningPattern === 'blackout') {
                 if(markedIndices.size === size * size) hasWon = true;
             }
-
             bingoBtn.disabled = !hasWon;
         }
 
-        // --- Global Auth State Management ---
+        // --- Global Auth State & Page Load Logic ---
         onAuthStateChanged(auth, (user) => {
             const protectedViews = ['host-dashboard-view', 'create-game-view', 'host-lobby-view', 'host-game-view'];
             if (user) {
                 currentUser = user;
                 hostEmailDisplay.textContent = `Logged in as: ${user.email}`;
-                if (currentView === 'host-login-view' || currentView === 'initial-view') {
-                    switchView('host-dashboard-view');
-                }
+                if (currentView === 'host-login-view' || currentView === 'initial-view') { switchView('host-dashboard-view'); }
                 listenForGames(); 
             } else {
                 currentUser = null;
-                if (unsubscribeGames) unsubscribeGames();
-                if (unsubscribePlayers) unsubscribePlayers();
-                if (unsubscribeSession) unsubscribeSession();
+                if (unsubscribeGames) unsubscribeGames(); if (unsubscribePlayers) unsubscribePlayers(); if (unsubscribeSession) unsubscribeSession();
                 gameListContainer.innerHTML = `<p class="text-center text-gray-500 p-6">You haven't created any games yet.</p>`;
-                if (protectedViews.includes(currentView)) {
-                    switchView('initial-view');
-                }
+                if (protectedViews.includes(currentView)) { switchView('initial-view'); }
+            }
+        });
+
+        // Check for join code in URL on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateWordHelper();
+            const urlParams = new URLSearchParams(window.location.search);
+            const joinCode = urlParams.get('joinCode');
+            if (joinCode) {
+                gameCodeInput.value = joinCode.toUpperCase();
+                switchView('player-join-view');
             }
         });
 
     </script>
 </body>
 </html>
+
+
 
